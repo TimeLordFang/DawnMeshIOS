@@ -2,7 +2,7 @@
 
 独立的 iOS 客户端源码仓库，功能基线为 DawnMesh Android **1.1.0**。iOS 宿主源自最初参考的 [SunsetRipple](https://github.com/Starlordzz/sunsetripple) 提交 `f63d418f7637972e5728e54cfcc7c8afbf25d26d`，共享 Dart 会话、UI、密码学与协议来自安卓版，保留 Apache-2.0 许可。
 
-**目前是待真机验收的开发版本。** 已验证 Android/iOS Opus 双向编解码和协议回归；本机没有完整 Xcode，尚未生成 iOS 安装包，也没有完成三端真实设备语音验收。请勿将协议测试通过理解为生产发布。
+**目前是待真机验收的开发版本。** 已验证 Android/iOS Opus 双向编解码和协议回归，并通过 GitHub Actions 的完整 iOS 编译，生成未签名 App。Apple 签名安装及三端真实设备语音验收尚未完成。
 
 ## 功能与互通
 
@@ -43,7 +43,7 @@ flutter pub get --enforce-lockfile
 
 打开 `ios/Runner.xcworkspace`，为 Runner 选择自己的 Apple Developer Team，确认 Bundle ID `dev.dawnmesh.intercom.ios` 和 Keychain Sharing，使用匹配的描述文件构建真机包。App Store/TestFlight 签名与上传需要该账号，本仓库没有证书或账号密钥。正式发布前提交 `ios/Podfile.lock`，锁定经 Xcode 验证的完整 iOS 依赖。
 
-[GitHub Actions](.github/workflows/ios.yml) 提供源码检查、原生回归与未签名 iOS 编译流程；远程 CI 尚未执行。完整[验收步骤](docs/INTEROPERABILITY.md)必须在发布前完成。
+[GitHub Actions](https://github.com/TimeLordFang/DawnMeshIOS/actions/runs/38353118485) 已通过源码检查、298 项 Flutter 回归、原生回归和完整 iOS 编译。该构建页面的 `DawnMeshIOS-unsigned-app` 产物包含未签名 App（压缩包约 15 MB）。完整[验收步骤](docs/INTEROPERABILITY.md)必须在发布前完成。
 
 ## 仓库结构
 

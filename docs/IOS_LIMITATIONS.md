@@ -30,4 +30,4 @@ iOS 的 audio 后台模式仅为持续音频提供系统条件，不能保证应
 
 ## 5. 非硬件阻塞的交付条件
 
-完整 Xcode/iOS SDK、CocoaPods 依赖解析和 Apple 签名缺失属于构建环境条件，不能当作“硬件限制”掩盖。须先让 iOS 原生工程完成编译，再执行三端真实语音验收；CI 流程已提供，当前未执行。当前仓库是实现和验证基线，不是已完成真机验收的正式客户端。
+完整 iOS 工程已在 [GitHub macOS/Xcode Runner](https://github.com/TimeLordFang/DawnMeshIOS/actions/runs/38353118485) 编译通过并上传未签名 App。本机缺少完整 Xcode，不影响该远程编译结果。Apple 签名、安装及三端真机语音验收仍须完成；账号与构建环境条件不能当作“硬件限制”掩盖。当前仓库是可编译的实现和验证基线，尚未完成真机验收。

@@ -9,16 +9,19 @@
 - 原生 C/C++：实际编译 vendored Opus 137 个 C 源与 RNNoise；**2 个 CTest 目标通过**：voice_denoiser、ios_codec。
 - Android/iOS 实际编解码互通：Concentus 1.0.2 生成 103 字节 16kHz/20ms Opus；iOS codec 解码成功；iOS codec 生成包，Concentus 解码为 320 个非静音样本。无手机射频/声学参与。
 - iOS 工程 plist、entitlements、pbxproj 校验通过，Podfile/两个本地 podspec Ruby 语法检查通过。
-- 所有 Swift 原生源语法解析通过；BLE、Bonjour 与 WireSupport 在 macOS SDK 下通过类型检查（使用最小 Flutter API 测试桩）。这不是完整 iOS SDK 编译。
+- 所有 Swift 原生源语法解析通过；BLE、Bonjour 与 WireSupport 在 macOS SDK 下通过类型检查（使用最小 Flutter API 测试桩）。该本机检查为补充；完整 iOS 编译结果见下一项。
+
+- **远程完整 iOS 编译通过**：[GitHub Actions](https://github.com/TimeLordFang/DawnMeshIOS/actions/runs/38353118485)，源码提交 `bb9829a`。锁定 Dart 依赖解析、Flutter 分析/回归、C/C++ 与 Swift 回归、CocoaPods 工程生成、AudioUnit/UIKit Swift 桥、WebRTC ObjC++ 降噪桥及 release iOS 链接均成功。
+- 构建产物 `DawnMeshIOS-unsigned-app` 已上传，未过期，压缩包 15,635,359 字节；内容为未签名 `Runner.app`。不是已签名 IPA，也不能直接安装真机。
+- 首次 CocoaPods 工程生成失败后，调整 vendored 私有头文件封装，并区分 RNNoise/Opus 的重名 C 源文件，复测通过。
 
 ## 当前未验证
 
-- 完整 iOS 应用编译、CocoaPods 实际解析/链接、`Podfile.lock`、Swift AudioUnit/UIKit 桥和 WebRTC ObjC 后处理桥的 iOS SDK 类型检查。
+- `ios/Podfile.lock` 尚未提交；正式发布前需保存经 CI/Xcode 解析的完整 iOS 依赖锁定文件。
 - 真机 IPA 签名/安装、iOS↔Android↔网页的真实公网语音/E2EE、近场双向收发、六人 BLE 和十六人 LAN/融合容量。
 - 锁屏/后台/系统挂起、耳机射频共存、音频中断、麦克风声学与 Apple 能力审批。
-- 远程 GitHub CI；已提供 workflow，运行结果另记。
 
-本机只有 Apple Command Line Tools，没有 `/Applications/Xcode.app`、iOS SDK 或 CocoaPods。不能把当前回归结果描述为“iOS 已编译、已签名或真机正常互通”。验收步骤见 [INTEROPERABILITY.md](INTEROPERABILITY.md)。
+本机只有 Apple Command Line Tools；完整 iOS 编译由 GitHub macOS/Xcode Runner 完成。当前可以确认源码与原生桥编译通过，不能描述为“已签名或真机正常互通”。验收步骤见 [INTEROPERABILITY.md](INTEROPERABILITY.md)。
 
 ## 复现
 
