@@ -14,8 +14,8 @@ add_library(dawn_mesh_native SHARED
 
 add_library(rnnoise STATIC
     vendor/rnnoise/src/denoise.c vendor/rnnoise/src/rnn.c
-    vendor/rnnoise/src/rnn_data.c vendor/rnnoise/src/pitch.c
-    vendor/rnnoise/src/kiss_fft.c vendor/rnnoise/src/celt_lpc.c)
+    vendor/rnnoise/src/rnn_data.c vendor/rnnoise/src/rnnoise_pitch.c
+    vendor/rnnoise/src/rnnoise_kiss_fft.c vendor/rnnoise/src/rnnoise_celt_lpc.c)
 set_target_properties(rnnoise PROPERTIES POSITION_INDEPENDENT_CODE ON C_VISIBILITY_PRESET hidden)
 target_include_directories(rnnoise PUBLIC vendor/rnnoise/include PRIVATE vendor/rnnoise/src)
 target_compile_options(rnnoise PRIVATE -O3)

@@ -35,7 +35,8 @@ jobs:
             python3 - "$RUNNER_TEMP/dawnmesh-ios-build.log" <<'PYTHON'
           import pathlib, sys
           lines = pathlib.Path(sys.argv[1]).read_text(errors='replace').splitlines()
-          message = '\n'.join(lines[-80:])[-16000:]
+          errors = [line[:400] for line in lines if any(word in line.lower() for word in ['error', 'failed', 'duplicate', 'unable', 'exception', '[!]'])]
+          message = '\n'.join((errors[:8] + errors[-4:] + [line[:200] for line in lines[-8:]]))[:3800]
           message = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
           print('::error title=iOS build diagnostics::' + message)
           PYTHON

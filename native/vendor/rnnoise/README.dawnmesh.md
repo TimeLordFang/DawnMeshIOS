@@ -9,3 +9,4 @@ DawnMesh wraps the 48 kHz / 480-sample API with streaming resampling and optiona
 The license is also distributed in APK assets as RNNoise-LICENSE.txt.
 
 The iOS port prefixes the bundled CELT/FFT helpers in src/arch.h to avoid symbol collisions with linked libopus.
+The three CELT-derived C files are renamed rnnoise_pitch.c, rnnoise_kiss_fft.c and rnnoise_celt_lpc.c to keep Xcode object filenames distinct from libopus.
