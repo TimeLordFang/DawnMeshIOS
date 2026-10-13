@@ -1,0 +1,21 @@
+require 'json'
+Pod::Spec.new do |s|
+  s.name = 'DawnMeshNative'
+  s.version = '1.1.0'
+  s.summary = 'Opus 16kHz and DawnMesh RNNoise voice enhancement.'
+  s.homepage = 'https://github.com/TimeLordFang/DawnMeshIOS'
+  s.license = { :type => 'Apache-2.0', :file => '../LICENSE' }
+  s.author = 'DawnMesh contributors'
+  s.source = { :path => '.' }
+  s.platform = :ios, '15.0'
+  opus = JSON.parse(File.read(File.join(__dir__, 'vendor/opus/sources.json'))).map { |p| "vendor/opus/#{p}" }
+  s.source_files = opus + ['vendor/opus/**/*.h', 'src/DawnMeshAudio.h', 'src/ios_audio_codec.cpp', 'src/voice_denoiser.{cpp,h}', 'src/tonal_suppressor.{cpp,h}', 'src/ring_buffer.{cpp,h}', 'src/audio_dsp.cpp', 'src/protocol_frame.{cpp,h}', 'vendor/rnnoise/include/*.h', 'vendor/rnnoise/src/*.h', 'vendor/rnnoise/src/{denoise,rnn,rnn_data,pitch,kiss_fft,celt_lpc}.c']
+  s.public_header_files = 'src/DawnMeshAudio.h'
+  s.preserve_paths = ['vendor/opus/COPYING', 'vendor/rnnoise/COPYING']
+  s.libraries = 'c++'
+  s.pod_target_xcconfig = {
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
+    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) OPUS_BUILD=1 USE_ALLOCA=1 HAVE_LRINTF=1 HAVE_LRINT=1',
+    'HEADER_SEARCH_PATHS' => '$(inherited) "$(PODS_TARGET_SRCROOT)/vendor/opus/include" "$(PODS_TARGET_SRCROOT)/vendor/opus" "$(PODS_TARGET_SRCROOT)/vendor/opus/celt" "$(PODS_TARGET_SRCROOT)/vendor/opus/silk" "$(PODS_TARGET_SRCROOT)/vendor/opus/silk/float" "$(PODS_TARGET_SRCROOT)/vendor/rnnoise/include" "$(PODS_TARGET_SRCROOT)/vendor/rnnoise/src"'
+  }
+end

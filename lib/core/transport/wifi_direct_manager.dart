@@ -1,0 +1,354 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
+
+import '../diagnostics/app_log.dart';
+import 'wifi_direct_credentials.dart';
+
+const String _tag = 'WiFiDirect';
+
+class WifiP2pPeer {
+  final String name;
+  final String address;
+  final int status;
+  final bool isGroupOwner;
+  final String? fusionRoomId;
+  final String? fusionRoomName;
+
+  const WifiP2pPeer({
+    required this.name,
+    required this.address,
+    required this.status,
+    required this.isGroupOwner,
+    this.fusionRoomId,
+    this.fusionRoomName,
+  });
+
+  factory WifiP2pPeer.fromMap(Map<dynamic, dynamic> map) {
+    return WifiP2pPeer(
+      name: (map['name'] as String?) ?? '未知设备',
+      address: (map['address'] as String?) ?? '',
+      status: (map['status'] as int?) ?? 0,
+      isGroupOwner: (map['isGroupOwner'] as bool?) ?? false,
+      fusionRoomId: map['fusionRoomId'] as String?,
+      fusionRoomName: map['fusionRoomName'] as String?,
+    );
+  }
+}
+
+class WifiP2pConnectionInfo {
+  final bool isConnected;
+  final bool isGroupOwner;
+  final bool groupFormed;
+  final String groupOwnerAddress;
+  final String networkName;
+
+  const WifiP2pConnectionInfo({
+    required this.isConnected,
+    required this.isGroupOwner,
+    required this.groupFormed,
+    required this.groupOwnerAddress,
+    this.networkName = '',
+  });
+
+  factory WifiP2pConnectionInfo.fromMap(Map<dynamic, dynamic> map) {
+    return WifiP2pConnectionInfo(
+      isConnected: (map['isConnected'] as bool?) ?? false,
+      isGroupOwner: (map['isGroupOwner'] as bool?) ?? false,
+      groupFormed:
+          (map['groupFormed'] as bool?) ??
+          (map['isConnected'] as bool?) ??
+          false,
+      groupOwnerAddress: (map['groupOwnerAddress'] as String?) ?? '',
+      networkName: (map['networkName'] as String?) ?? '',
+    );
+  }
+}
+
+/// Wi-Fi Direct (Wi-Fi P2P) 近场直连管理器。
+class WifiDirectManager {
+  static const MethodChannel _channel = MethodChannel(
+    'dev.dawnmesh.intercom/wifi_direct',
+  );
+  static const EventChannel _eventChannel = EventChannel(
+    'dev.dawnmesh.intercom/wifi_direct_events',
+  );
+
+  static final WifiDirectManager instance = WifiDirectManager._internal();
+
+  StreamSubscription? _eventSubscription;
+  final _peersController = StreamController<List<WifiP2pPeer>>.broadcast();
+  final _connectionController =
+      StreamController<WifiP2pConnectionInfo>.broadcast();
+
+  Stream<List<WifiP2pPeer>> get peersStream => _peersController.stream;
+  Stream<WifiP2pConnectionInfo> get connectionStream =>
+      _connectionController.stream;
+
+  bool _isListening = false;
+
+  // 上次推送的设备列表指纹。周期性重扫会把同一批设备反复推上来，
+  // 不去重的话首页的房间列表会被整棵重建（含退场转场期间）。
+  String? _lastPeersSignature;
+
+  WifiDirectManager._internal();
+
+  Future<bool> isSupported() async {
+    try {
+      return await _channel.invokeMethod<bool>('isSupported') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Read-only prerequisites; joining never repeatedly opens permission dialogs.
+  Future<String> hybridAvailability() async {
+    try {
+      return await _channel.invokeMethod<String>('hybridAvailability') ??
+          'unsupported';
+    } catch (_) {
+      return 'unsupported';
+    }
+  }
+
+  Future<bool> isEnabled() async {
+    try {
+      return await _channel.invokeMethod<bool>('isEnabled') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> startListeningEvents() async {
+    if (_isListening) return;
+    if (!await isSupported()) return;
+    _isListening = true;
+
+    try {
+      _eventSubscription = _eventChannel.receiveBroadcastStream().listen(
+        (dynamic event) {
+          if (event is! Map) return;
+          final type = event['type'] as String?;
+          if (type == 'peers') {
+            final peerList =
+                (event['peers'] as List?)
+                    ?.map((p) => WifiP2pPeer.fromMap(p as Map))
+                    .toList() ??
+                [];
+            if (!_peersController.isClosed) {
+              final signature = peerList
+                  .map(
+                    (p) =>
+                        '${p.address}|${p.name}|${p.fusionRoomId}|${p.fusionRoomName}',
+                  )
+                  .join(';');
+              if (signature != _lastPeersSignature) {
+                _lastPeersSignature = signature;
+                _peersController.add(peerList);
+              }
+            }
+          } else if (type == 'connection') {
+            final info = WifiP2pConnectionInfo.fromMap(event);
+            if (!_connectionController.isClosed) {
+              _connectionController.add(info);
+            }
+          }
+        },
+        onError: (Object e) {
+          AppLog.debug(_tag, 'Wi-Fi Direct 事件流未就绪: $e');
+        },
+        cancelOnError: true,
+      );
+    } catch (e) {
+      AppLog.debug(_tag, '监听 Wi-Fi Direct 事件流失败: $e');
+    }
+  }
+
+  Future<bool> createGroup(WifiDirectCredentials credentials) async {
+    if (!await isSupported()) return false;
+    await startListeningEvents();
+    try {
+      final success =
+          await _channel.invokeMethod<bool>(
+            'createGroup',
+            credentials.toMap(),
+          ) ??
+          false;
+      if (success) AppLog.info(_tag, '已成功建立 Wi-Fi Direct 群组 (Group Owner)');
+      return success;
+    } catch (e) {
+      AppLog.debug(_tag, '建立 Wi-Fi Direct 群组未完成: $e');
+      return false;
+    }
+  }
+
+  Future<bool> connectKnownGroup(WifiDirectCredentials credentials) async {
+    if (!await isSupported()) return false;
+    await startListeningEvents();
+    try {
+      return await _channel.invokeMethod<bool>(
+            'connectKnownGroup',
+            credentials.toMap(),
+          ) ??
+          false;
+    } catch (error) {
+      AppLog.warn(_tag, '融合直连建链失败：$error');
+      return false;
+    }
+  }
+
+  Future<bool> removeGroup() async {
+    if (!await isSupported()) return false;
+    try {
+      return await _channel.invokeMethod<bool>('removeGroup') ?? false;
+    } catch (e) {
+      AppLog.debug(_tag, '解散 Wi-Fi Direct 群组未完成: $e');
+      return false;
+    }
+  }
+
+  Future<bool> discoverPeers() async {
+    if (!await isSupported()) return false;
+    await startListeningEvents();
+    try {
+      return await _channel.invokeMethod<bool>('discoverPeers') ?? false;
+    } catch (e) {
+      AppLog.debug(_tag, '发起 Wi-Fi Direct 搜索未完成: $e');
+      return false;
+    }
+  }
+
+  /// DNS-SD identifies a room before joining its Wi-Fi Direct group.
+  Future<bool> discoverFusionRooms() async {
+    if (!await isSupported()) return false;
+    await startListeningEvents();
+    try {
+      return await _channel.invokeMethod<bool>('discoverFusionRooms') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> advertiseFusionRoom(String id, String name) async {
+    try {
+      return await _channel.invokeMethod<bool>('advertiseFusionRoom', {
+            'roomId': id,
+            'roomName': name,
+          }) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> stopFusionDiscovery() async {
+    try {
+      await _channel.invokeMethod<void>('stopFusionDiscovery');
+    } catch (_) {}
+  }
+
+  Future<void> stopAdvertisingFusionRoom() async {
+    try {
+      await _channel.invokeMethod<void>('stopAdvertisingFusionRoom');
+    } catch (_) {}
+  }
+
+  Future<bool> connect(
+    String deviceAddress,
+    WifiDirectCredentials credentials,
+  ) async {
+    if (!await isSupported()) return false;
+    await startListeningEvents();
+    try {
+      final success =
+          await _channel.invokeMethod<bool>('connect', {
+            'deviceAddress': deviceAddress,
+            ...credentials.toMap(),
+          }) ??
+          false;
+      if (success) {
+        AppLog.info(_tag, '已向 $deviceAddress 发起 Wi-Fi Direct 连接请求');
+      }
+      return success;
+    } catch (e) {
+      AppLog.debug(_tag, '发起到 $deviceAddress 的 Wi-Fi Direct 连接未完成: $e');
+      return false;
+    }
+  }
+
+  /// 发起到指定设备的 Wi-Fi Direct 直连请求并等待系统配对连接就绪。
+  Future<WifiP2pConnectionInfo?> connectAndWait(
+    String deviceAddress, {
+    required WifiDirectCredentials credentials,
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
+    final ready = Completer<WifiP2pConnectionInfo>();
+    final subscription = connectionStream.listen((info) {
+      if (!ready.isCompleted &&
+          info.isConnected &&
+          info.groupOwnerAddress.isNotEmpty) {
+        ready.complete(info);
+      }
+    });
+    final initiated = await connect(deviceAddress, credentials);
+    if (!initiated) {
+      await subscription.cancel();
+      AppLog.error(_tag, '发起 Wi-Fi Direct 直连请求失败');
+      return null;
+    }
+
+    try {
+      // 某些系统在 create/connect 方法返回前就已发出连接事件。
+      // 事先订阅之外再主动查一次，避免错过唯一一次广播后假超时。
+      final current = await getConnectionInfo();
+      if (!ready.isCompleted &&
+          current.isConnected &&
+          current.groupOwnerAddress.isNotEmpty) {
+        ready.complete(current);
+      }
+      final info = await ready.future.timeout(timeout);
+      AppLog.info(_tag, 'Wi-Fi Direct 直连链路已就绪 (GO=${info.groupOwnerAddress})');
+      return info;
+    } on TimeoutException {
+      AppLog.warn(_tag, '等待 Wi-Fi Direct 直连连接超时');
+      return null;
+    } catch (e) {
+      AppLog.error(_tag, 'Wi-Fi Direct 握手连接异常: $e');
+      return null;
+    } finally {
+      await subscription.cancel();
+    }
+  }
+
+  Future<bool> disconnect() async {
+    try {
+      return await _channel.invokeMethod<bool>('disconnect') ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<WifiP2pConnectionInfo> getConnectionInfo() async {
+    try {
+      final res = await _channel.invokeMapMethod<String, dynamic>(
+        'getConnectionInfo',
+      );
+      return WifiP2pConnectionInfo.fromMap(res ?? {});
+    } catch (_) {
+      return const WifiP2pConnectionInfo(
+        isConnected: false,
+        isGroupOwner: false,
+        groupFormed: false,
+        groupOwnerAddress: '',
+      );
+    }
+  }
+
+  void dispose() {
+    _eventSubscription?.cancel();
+    _eventSubscription = null;
+    _isListening = false;
+    _peersController.close();
+    _connectionController.close();
+  }
+}

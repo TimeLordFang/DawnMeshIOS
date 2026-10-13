@@ -1,0 +1,32 @@
+name: iOS build and protocol checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          channel: stable
+          cache: true
+      - run: flutter config --no-enable-swift-package-manager
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter analyze
+      - run: flutter test --concurrency=1
+      - run: ./scripts/check-native.sh
+      - run: ./scripts/build-ios.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DawnMeshIOS-unsigned-app
+          path: build/ios/iphoneos/Runner.app
+          if-no-files-found: error
