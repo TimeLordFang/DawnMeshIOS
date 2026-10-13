@@ -1,5 +1,7 @@
 # 曙光之声 · DawnMesh iOS
 
+当前 iOS 版本：**1.0.0**。详见 [发布说明](docs/RELEASE_1.0.0.md)。
+
 独立的 iOS 客户端源码仓库，功能基线为 DawnMesh Android **1.1.0**。iOS 宿主源自最初参考的 [SunsetRipple](https://github.com/Starlordzz/sunsetripple) 提交 `f63d418f7637972e5728e54cfcc7c8afbf25d26d`，共享 Dart 会话、UI、密码学与协议来自安卓版，保留 Apache-2.0 许可。
 
 **目前是待真机验收的开发版本。** 已验证 Android/iOS Opus 双向编解码和协议回归，并通过 GitHub Actions 的完整 iOS 编译，生成未签名 App。Apple 签名安装及三端真实设备语音验收尚未完成。
@@ -39,11 +41,11 @@ flutter pub get --enforce-lockfile
 ./scripts/build-ios.sh
 ```
 
-本工程显式使用 CocoaPods，以链接 `DawnMeshNative` 与锁定 `flutter_webrtc 1.6.0` 的 `DawnMeshDSP` 采集处理接口。`build-ios.sh` 生成未签名的 `build/ios/iphoneos/Runner.app`；未签名 App 不能直接装到真机。
+本工程显式使用 CocoaPods，以链接 `DawnMeshNative` 与锁定 `flutter_webrtc 1.6.2` 的 `DawnMeshDSP` 采集处理接口。`build-ios.sh` 生成未签名的 `build/ios/iphoneos/Runner.app`；未签名 App 不能直接装到真机。
 
 打开 `ios/Runner.xcworkspace`，为 Runner 选择自己的 Apple Developer Team，确认 Bundle ID `dev.dawnmesh.intercom.ios` 和 Keychain Sharing，使用匹配的描述文件构建真机包。App Store/TestFlight 签名与上传需要该账号，本仓库没有证书或账号密钥。正式发布前提交 `ios/Podfile.lock`，锁定经 Xcode 验证的完整 iOS 依赖。
 
-[GitHub Actions](https://github.com/TimeLordFang/DawnMeshIOS/actions/runs/38353118485) 已通过源码检查、298 项 Flutter 回归、原生回归和完整 iOS 编译。该构建页面的 `DawnMeshIOS-unsigned-app` 产物包含未签名 App（压缩包约 15 MB）。完整[验收步骤](docs/INTEROPERABILITY.md)必须在发布前完成。
+[GitHub Actions](https://github.com/TimeLordFang/DawnMeshIOS/actions/runs/38363601148) 已通过源码检查、298 项 Flutter 回归、原生回归和完整 iOS 编译。该构建页面的 `DawnMeshIOS-unsigned-app` 产物包含未签名 App（压缩包约 16 MB）。完整[验收步骤](docs/INTEROPERABILITY.md)必须在发布前完成。
 
 ## 仓库结构
 
@@ -56,7 +58,7 @@ scripts/    检查与 iOS 构建脚本
 docs/       功能对标、协议合同、系统限制和验证记录
 ```
 
-版本号沿用协议基线 `1.1.0+51`，不代表 iOS 已发布。更新检查只使用 `DawnMeshIOS` Releases，不会引导 iOS 用户下载 Android APK。
+iOS 独立版本从 `1.0.0+1` 开始，对应标签 `v1.0.0`；功能和协议继续对标 Android 1.1.x。更新检查只使用 `DawnMeshIOS` Releases，不会引导 iOS 用户下载 Android APK。
 
 ## 安全与隐私
 

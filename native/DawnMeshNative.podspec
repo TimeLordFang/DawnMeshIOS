@@ -1,7 +1,7 @@
 require 'json'
 Pod::Spec.new do |s|
   s.name = 'DawnMeshNative'
-  s.version = '1.1.0'
+  s.version = '1.0.0'
   s.summary = 'Opus 16kHz and DawnMesh RNNoise voice enhancement.'
   s.homepage = 'https://github.com/TimeLordFang/DawnMeshIOS'
   s.license = { :type => 'Apache-2.0', :file => '../LICENSE' }

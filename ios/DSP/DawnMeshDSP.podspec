@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = 'DawnMeshDSP'
-  s.version = '1.1.0'
+  s.version = '1.0.0'
   s.summary = 'DawnMesh voice enhancement for the pinned WebRTC capture processor.'
   s.homepage = 'https://github.com/TimeLordFang/DawnMeshIOS'
   s.license = { :type => 'Apache-2.0', :file => '../../LICENSE' }

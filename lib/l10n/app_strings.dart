@@ -218,8 +218,8 @@ class AppStrings {
       : '这次没查到更新，稍后再试一次';
   String get changelogTitle => isEn ? 'Recent changes' : '最近的变化';
   String get changelogBody => isEn
-      ? '1.1.0\nWi-Fi and fusion rooms now support up to 16 members, with encrypted fragmentation for long rosters and fewer redundant fusion paths. Includes voice quality presets, noise reduction, stable device identities, offline fusion communication and 30-minute recovery. Update all clients and Server to 0.3.0. Actual Wi-Fi Direct group capacity depends on the phones; Bluetooth remains limited to 6 members.'
-      : '1.1.0\nWi-Fi 房和融合房扩至 16 人，长名单通过加密分片完整传输，融合房减少重复转发路径。包含音质档位、降噪、稳定设备身份、离线融合通话及 30 分钟重连。所有成员需更新客户端，服务端升级至 0.3.0。Wi-Fi 直连实际群组容量取决于手机，蓝牙房保持 6 人。';
+      ? '1.0.0\nFirst independent iOS version, matching Android intercom features and compatible with Android and Web. Includes Internet rooms, encrypted messaging, LAN and fusion rooms, joining Android Bluetooth rooms, Opus audio and RNNoise enhancement. iOS Bluetooth hosting and Android Wi-Fi Direct remain unavailable.'
+      : '1.0.0\n首个独立 iOS 版本，对标安卓版功能并兼容 Android 和网页。包含公网房、加密消息、局域网与融合房、加入安卓蓝牙房、Opus 语音和 RNNoise 降噪。iOS 蓝牙建房与 Android Wi-Fi Direct 暂不可用。';
   String get licenseTitle => isEn ? 'Open source license' : '开源许可';
   String get licenseBody => isEn
       ? 'Apache License 2.0\nDawnMesh is based on its original upstream project, under Apache License 2.0.\nhttps://www.apache.org/licenses/LICENSE-2.0'
