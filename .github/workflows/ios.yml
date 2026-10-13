@@ -24,7 +24,23 @@ jobs:
       - run: flutter analyze
       - run: flutter test --concurrency=1
       - run: ./scripts/check-native.sh
-      - run: ./scripts/build-ios.sh
+      - name: Build iOS and expose compiler diagnostics
+        shell: bash
+        run: |
+          set +e
+          ./scripts/build-ios.sh > "$RUNNER_TEMP/dawnmesh-ios-build.log" 2>&1
+          dawnmesh_build_status=$?
+          cat "$RUNNER_TEMP/dawnmesh-ios-build.log"
+          if [ "$dawnmesh_build_status" -ne 0 ]; then
+            python3 - "$RUNNER_TEMP/dawnmesh-ios-build.log" <<'PYTHON'
+          import pathlib, sys
+          lines = pathlib.Path(sys.argv[1]).read_text(errors='replace').splitlines()
+          message = '\n'.join(lines[-80:])[-16000:]
+          message = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print('::error title=iOS build diagnostics::' + message)
+          PYTHON
+          fi
+          exit "$dawnmesh_build_status"
       - uses: actions/upload-artifact@v4
         with:
           name: DawnMeshIOS-unsigned-app
