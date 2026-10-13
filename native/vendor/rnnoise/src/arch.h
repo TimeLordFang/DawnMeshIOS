@@ -34,7 +34,7 @@
 #ifndef ARCH_H
 #define ARCH_H
 
-/* DawnMesh: isolate RNNoise's bundled CELT helpers from libopus. */
+/* DawnMesh: isolate RNNoise CELT/FFT helpers from linked libopus. */
 #define celt_pitch_xcorr dawn_rnnoise_celt_pitch_xcorr
 #define pitch_downsample dawn_rnnoise_pitch_downsample
 #define pitch_search dawn_rnnoise_pitch_search

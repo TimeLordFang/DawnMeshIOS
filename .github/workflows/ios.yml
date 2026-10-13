@@ -7,18 +7,24 @@ permissions:
   contents: read
 jobs:
   verify:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: maxim-lobanov/setup-xcode@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
           xcode-version: latest-stable
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: '3.47.2'
+          flutter-version: '3.47.7'
           channel: stable
           cache: true
+      - name: Install latest stable CMake
+        run: ./scripts/setup-cmake-ci.sh
+      - name: Install CocoaPods 1.17.0
+        run: |
+          gem install cocoapods -v 1.17.0 --user-install --no-document
+          echo "$(ruby -r rubygems -e 'puts Gem.user_dir')/bin" >> "$GITHUB_PATH"
       - run: flutter config --no-enable-swift-package-manager
       - run: flutter pub get --enforce-lockfile
       - run: flutter analyze
@@ -42,7 +48,7 @@ jobs:
           PYTHON
           fi
           exit "$dawnmesh_build_status"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: DawnMeshIOS-unsigned-app
           path: build/ios/iphoneos/Runner.app

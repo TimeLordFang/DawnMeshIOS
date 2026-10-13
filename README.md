@@ -30,7 +30,7 @@ Apple 对 UDP 广播/组播要求额外 entitlement，本仓库默认没有冒�
 
 ## 构建
 
-要求 macOS、完整 Xcode 与 iOS SDK、Flutter **3.47.2** / Dart **3.13.2**、CocoaPods。最低 iOS **15.0**。原生 Opus 1.5.2 已包含源码与许可，不依赖过期的第三方 Opus 二进制。
+要求 macOS、完整 Xcode 与 iOS SDK、Flutter **3.47.7** / Dart **3.13.5**、CocoaPods。最低 iOS **15.0**。原生 Opus 1.6.1 已包含源码与许可，不依赖过期的第三方 Opus 二进制。
 
 ```sh
 flutter config --no-enable-swift-package-manager
