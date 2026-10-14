@@ -1,0 +1,8 @@
+"CFBundleDisplayName" = "DawnMesh";
+"NSBluetoothAlwaysUsageDescription" = "Connect to nearby people using Bluetooth to share voice and messages.";
+"NSBluetoothPeripheralUsageDescription" = "Connect to nearby people using Bluetooth to share voice and messages.";
+"NSMicrophoneUsageDescription" = "Share your voice with other people in the room.";
+"NSLocalNetworkUsageDescription" = "Find nearby devices and join rooms on your local network.";
+"NSCameraUsageDescription" = "Take photos to share with people in the room.";
+"NSPhotoLibraryUsageDescription" = "Choose photos to share with people in the room.";
+"NSPhotoLibraryAddUsageDescription" = "Save photos received in the room to your photo library.";

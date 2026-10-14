@@ -8,6 +8,10 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
     private lazy var central = CBCentralManager(delegate: self, queue: .main)
     private var peripherals = [String: CBPeripheral]()
     private var rooms = [String: AndroidBleRoom]()
+    private var discovery = DawnDiscoveryLedger()
+    private var lastReported = [String: TimeInterval]()
+    private var preferenceObserver: NSObjectProtocol?
+    private var reconnectTarget: String?
     private var peer: CBPeripheral?
     private var channel: CBL2CAPChannel?
     private var reader = DawnFrameReader()
@@ -18,7 +22,16 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
     private var connectResult: FlutterResult?
     private var targetPSM: CBL2CAPPSM?
     private var connectTimer: Timer?
-    private var maxAge: TimeInterval { max(0.02, min(0.3, (UserDefaults.standard.dictionary(forKey: "audioTuningParameters")?["maxRealtimeAgeMillis"] as? Double ?? 180) / 1000)) }
+    private var maxAge: TimeInterval = 0.18
+    override init() {
+        super.init()
+        refreshTuning()
+        preferenceObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in self?.refreshTuning() }
+    }
+    deinit { if let observer = preferenceObserver { NotificationCenter.default.removeObserver(observer) } }
+    private func refreshTuning() {
+        maxAge = max(0.02, min(0.3, (UserDefaults.standard.dictionary(forKey: "audioTuningParameters")?["maxRealtimeAgeMillis"] as? Double ?? 180) / 1000))
+    }
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = BleL2capPlugin()
@@ -43,6 +56,7 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
             guard central.state == .poweredOn, let address = args["address"] as? String,
                   let peripheral = peripherals[address], let psm = args["psm"] as? Int, (1...255).contains(psm) else { result(false); return }
             disconnect(notify: false)
+            reconnectTarget = address
             connectResult = result; peer = peripheral; targetPSM = CBL2CAPPSM(psm)
             peripheral.delegate = self
             central.connect(peripheral)
@@ -54,7 +68,7 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
             }
             drain(); result(channel != nil)
         case "flush": drain(); result(nil)
-        case "stop": scanning = false; central.stopScan(); disconnect(notify: false); result(nil)
+        case "stop": reconnectTarget = nil; scanning = false; central.stopScan(); disconnect(notify: false); result(nil)
         default: result(FlutterMethodNotImplemented)
         }
     }
@@ -69,10 +83,20 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
         guard let bytes = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data,
               let room = AndroidBleRoom.parse(bytes) else { return }
         let id = peripheral.identifier.uuidString
-        if peripherals.count >= 64 && peripherals[id] == nil { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        guard let expired = discovery.observe(id, now: now, protecting: peer?.identifier.uuidString ?? reconnectTarget) else { return }
+        for key in expired {
+            peripherals.removeValue(forKey: key); rooms.removeValue(forKey: key); lastReported.removeValue(forKey: key)
+        }
+        let previous = rooms[id]
         peripherals[id] = peripheral
         let name = room.name == "蓝牙房" ? rooms[id]?.name ?? room.name : room.name
         rooms[id] = AndroidBleRoom(psm: room.psm, members: room.members, name: name)
+        // Continue refreshing Dart's room TTL while avoiding duplicate channel
+        // traffic. Metadata changes are delivered immediately.
+        let changed = previous?.name != name || previous?.psm != room.psm || previous?.members != room.members
+        guard scanning, changed || now - (lastReported[id] ?? -.infinity) >= 2 else { return }
+        lastReported[id] = now
         scanEvents.sink?(["address": id, "roomName": name, "psm": room.psm, "memberCount": room.members, "rssi": RSSI.intValue])
     }
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {

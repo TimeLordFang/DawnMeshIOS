@@ -47,3 +47,13 @@ jitter.append(sequence: 10, packet: Data([3]), now: 2)
 jitter.append(sequence: 11, packet: Data([4]), now: 2.02)
 expect(jitter.pop() == Data([3]), "Resume after PTT silence")
 print("Swift wire/BLE/write queue/jitter: \(checks) checks passed")
+
+var discovery = DawnDiscoveryLedger(capacity: 3, ttl: 30)
+expect(discovery.observe("connected", now: 0, protecting: "connected") == [], "Cache insert")
+_ = discovery.observe("old", now: 1, protecting: "connected")
+_ = discovery.observe("fresh", now: 2, protecting: "connected")
+expect(discovery.observe("new", now: 3, protecting: "connected") == ["old"], "Evict oldest without losing connected peer")
+expect(Set(discovery.observe("later", now: 40, protecting: "connected") ?? []) == Set(["fresh", "new"]), "Expire stale native references")
+expect(discovery.observe("connected", now: 41, protecting: "connected") == [], "Protected device retained")
+for index in 0..<130 { expect(discovery.observe("device-\(index)", now: Double(42 + index), protecting: "connected") != nil, "Discovery continues beyond 64 devices") }
+print("Discovery cache checks passed")

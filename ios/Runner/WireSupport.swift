@@ -107,3 +107,21 @@ struct DawnJitterQueue {
         return nil
     }
 }
+
+// Bounded scan metadata, independent of CoreBluetooth for deterministic tests.
+struct DawnDiscoveryLedger {
+    private var seen = [String: TimeInterval]()
+    let capacity: Int
+    let ttl: TimeInterval
+    init(capacity: Int = 64, ttl: TimeInterval = 30) { self.capacity = capacity; self.ttl = ttl }
+    mutating func observe(_ id: String, now: TimeInterval, protecting: String?) -> [String]? {
+        var removed = seen.compactMap { key, time in key != protecting && now - time > ttl ? key : nil }
+        for key in removed { seen.removeValue(forKey: key) }
+        if seen[id] == nil && seen.count >= capacity {
+            guard let oldest = seen.filter({ $0.key != protecting }).min(by: { $0.value < $1.value })?.key else { return nil }
+            seen.removeValue(forKey: oldest); removed.append(oldest)
+        }
+        seen[id] = now
+        return removed
+    }
+}

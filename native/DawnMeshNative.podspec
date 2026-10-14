@@ -9,7 +9,7 @@ Pod::Spec.new do |s|
   s.source = { :path => '.' }
   s.platform = :ios, '15.0'
   opus = JSON.parse(File.read(File.join(__dir__, 'vendor/opus/sources.json'))).map { |p| "vendor/opus/#{p}" }
-  s.source_files = opus + ['src/DawnMeshAudio.h', 'src/ios_audio_codec.cpp', 'src/voice_denoiser.cpp', 'src/tonal_suppressor.cpp', 'src/ring_buffer.cpp', 'src/audio_dsp.cpp', 'src/protocol_frame.cpp', 'vendor/rnnoise/src/{denoise,rnn,rnnoise_pitch,rnnoise_kiss_fft,rnnoise_celt_lpc,nnet,nnet_default,parse_lpcnet_weights,rnnoise_data,rnnoise_tables}.c']
+  s.source_files = opus + ['src/DawnMeshAudio.h', 'src/ios_audio_codec.cpp', 'src/voice_denoiser.cpp', 'src/tonal_suppressor.cpp', 'vendor/rnnoise/src/{denoise,rnn,rnnoise_pitch,rnnoise_kiss_fft,rnnoise_celt_lpc,nnet,nnet_default,parse_lpcnet_weights,rnnoise_data,rnnoise_tables}.c']
   s.public_header_files = 'src/DawnMeshAudio.h'
   s.preserve_paths = ['src/*.h', 'vendor/opus/**/*.h', 'vendor/rnnoise/**/*.h', 'vendor/opus/COPYING', 'vendor/rnnoise/COPYING']
   s.libraries = 'c++'

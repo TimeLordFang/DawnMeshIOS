@@ -1,0 +1,8 @@
+"CFBundleDisplayName" = "曙光之声";
+"NSBluetoothAlwaysUsageDescription" = "使用蓝牙连接附近的人，传递声音和文字。";
+"NSBluetoothPeripheralUsageDescription" = "使用蓝牙连接附近的人，传递声音和文字。";
+"NSMicrophoneUsageDescription" = "使用麦克风，把你说的话传给聊天中的其他人。";
+"NSLocalNetworkUsageDescription" = "通过本地网络，找到附近的设备并加入聊天。";
+"NSCameraUsageDescription" = "拍照，与房内成员分享。";
+"NSPhotoLibraryUsageDescription" = "选择照片，与房内成员分享。";
+"NSPhotoLibraryAddUsageDescription" = "将房内收到的照片保存到相册。";
