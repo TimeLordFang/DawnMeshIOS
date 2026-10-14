@@ -218,8 +218,8 @@ class AppStrings {
       : '这次没查到更新，稍后再试一次';
   String get changelogTitle => isEn ? 'Recent changes' : '最近的变化';
   String get changelogBody => isEn
-      ? '1.0.0\nFirst independent iOS version, matching Android intercom features and compatible with Android and Web. Includes Internet rooms, encrypted messaging, LAN and fusion rooms, joining Android Bluetooth rooms, Opus audio and RNNoise enhancement. iOS Bluetooth hosting and Android Wi-Fi Direct remain unavailable.'
-      : '1.0.0\n首个独立 iOS 版本，对标安卓版功能并兼容 Android 和网页。包含公网房、加密消息、局域网与融合房、加入安卓蓝牙房、Opus 语音和 RNNoise 降噪。iOS 蓝牙建房与 Android Wi-Fi Direct 暂不可用。';
+      ? '1.0.1\nPreserves replay protection across reconnects, refreshes the Bluetooth discovery cache while protecting reconnect targets, adds accessible push-to-talk controls and localizes permission descriptions.\n\n1.0.0\nFirst independent iOS version, matching Android intercom features and compatible with Android and Web. Includes Internet rooms, encrypted messaging, LAN and fusion rooms, joining Android Bluetooth rooms, Opus audio and RNNoise enhancement. iOS Bluetooth hosting and Android Wi-Fi Direct remain unavailable.'
+      : '1.0.1\n重连保留防重放状态，蓝牙扫描缓存及时淘汰并保护重连目标，新增无障碍对讲操作及中英文权限说明。\n\n1.0.0\n首个独立 iOS 版本，对标安卓版功能并兼容 Android 和网页。包含公网房、加密消息、局域网与融合房、加入安卓蓝牙房、Opus 语音和 RNNoise 降噪。iOS 蓝牙建房与 Android Wi-Fi Direct 暂不可用。';
   String get licenseTitle => isEn ? 'Open source license' : '开源许可';
   String get licenseBody => isEn
       ? 'Apache License 2.0\nDawnMesh is based on its original upstream project, under Apache License 2.0.\nhttps://www.apache.org/licenses/LICENSE-2.0'
