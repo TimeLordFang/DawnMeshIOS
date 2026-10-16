@@ -88,7 +88,7 @@ opus_int silk_VAD_GetSA_Q8_c(                                   /* O    Return v
     opus_int   decimated_framelength1, decimated_framelength2;
     opus_int   decimated_framelength;
     opus_int   dec_subframe_length, dec_subframe_offset, SNR_Q7, i, b, s;
-    opus_int32 sumSquared, smooth_coef_Q16;
+    opus_int32 sumSquared = 0, smooth_coef_Q16;
     opus_int16 HPstateTmp;
     VARDECL( opus_int16, X );
     opus_int32 Xnrg[ VAD_N_BANDS ];

@@ -280,7 +280,7 @@ public final class PlatformAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHa
         defer { if !success { stopAudioEngine() } }
 
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .defaultToSpeaker])
+        try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetoothHFP, .defaultToSpeaker])
         try session.setPreferredSampleRate(PlatformAudioPlugin.sampleRate)
         try session.setPreferredIOBufferDuration(0.02)
         try session.setActive(true, options: .notifyOthersOnDeactivation)

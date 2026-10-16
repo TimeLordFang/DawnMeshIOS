@@ -213,7 +213,7 @@ opus_int silk_Encode(                                   /* O    Returns error co
     tot_blocks = ( nBlocksOf10ms > 1 ) ? nBlocksOf10ms >> 1 : 1;
     curr_block = 0;
     if( prefillFlag ) {
-        silk_LP_state save_LP;
+        silk_LP_state save_LP = { 0 };
         /* Only accept input length of 10 ms */
         if( nBlocksOf10ms != 1 ) {
             celt_assert( 0 );

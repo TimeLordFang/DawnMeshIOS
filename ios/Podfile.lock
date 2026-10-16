@@ -1,0 +1,81 @@
+PODS:
+  - connectivity_plus (0.0.1):
+    - Flutter
+  - DawnMeshDSP (1.0.0):
+    - DawnMeshNative
+    - flutter_webrtc (= 1.6.2)
+  - DawnMeshNative (1.0.0)
+  - device_info_plus (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+  - flutter_secure_storage_darwin (10.0.0):
+    - Flutter
+    - FlutterMacOS
+  - flutter_webrtc (1.6.2):
+    - Flutter
+    - WebRTC-SDK (= 150.7871.01)
+  - gal (1.0.0):
+    - Flutter
+    - FlutterMacOS
+  - image_picker_ios (0.0.1):
+    - Flutter
+  - livekit_client (2.13.1):
+    - Flutter
+    - flutter_webrtc
+    - WebRTC-SDK (= 150.7871.01)
+  - WebRTC-SDK (150.7871.01)
+
+DEPENDENCIES:
+  - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
+  - DawnMeshDSP (from `DSP`)
+  - DawnMeshNative (from `../native`)
+  - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
+  - Flutter (from `Flutter`)
+  - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
+  - flutter_webrtc (from `.symlinks/plugins/flutter_webrtc/ios`)
+  - gal (from `.symlinks/plugins/gal/darwin`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - livekit_client (from `.symlinks/plugins/livekit_client/ios`)
+
+SPEC REPOS:
+  trunk:
+    - WebRTC-SDK
+
+EXTERNAL SOURCES:
+  connectivity_plus:
+    :path: ".symlinks/plugins/connectivity_plus/ios"
+  DawnMeshDSP:
+    :path: DSP
+  DawnMeshNative:
+    :path: "../native"
+  device_info_plus:
+    :path: ".symlinks/plugins/device_info_plus/ios"
+  Flutter:
+    :path: Flutter
+  flutter_secure_storage_darwin:
+    :path: ".symlinks/plugins/flutter_secure_storage_darwin/darwin"
+  flutter_webrtc:
+    :path: ".symlinks/plugins/flutter_webrtc/ios"
+  gal:
+    :path: ".symlinks/plugins/gal/darwin"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
+  livekit_client:
+    :path: ".symlinks/plugins/livekit_client/ios"
+
+SPEC CHECKSUMS:
+  connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
+  DawnMeshDSP: e8369a5b05b8269c9359899f0ffc96b849500ae9
+  DawnMeshNative: 44b2409ebf2875c4d6774a4ed77cff7285a719f2
+  device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
+  flutter_secure_storage_darwin: 46e401699982ee74142909676535e0f6a7321e58
+  flutter_webrtc: 99283145164f482a16bf7122ef407b5d59d43158
+  gal: baecd024ebfd13c441269ca7404792a7152fde89
+  image_picker_ios: c06ac6fe6dc36476da54dbe860dbf2a1ef20fe1e
+  livekit_client: 8d11d6ce08ea4a817775ebd83353fedabd944205
+  WebRTC-SDK: 7dc931c64c00c735a614382f1a59cf65019c3c17
+
+PODFILE CHECKSUM: 6d685d95b6656dd82433cb77f97e7a080fb71161
+
+COCOAPODS: 1.17.0

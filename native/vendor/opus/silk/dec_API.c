@@ -147,7 +147,7 @@ opus_int silk_Decode(                                   /* O    Returns error co
 )
 {
     opus_int   i, n, decode_only_middle = 0, ret = SILK_NO_ERROR;
-    opus_int32 nSamplesOutDec, LBRR_symbol;
+    opus_int32 nSamplesOutDec = 0, LBRR_symbol;
     opus_int16 *samplesOut1_tmp[ 2 ];
     VARDECL( opus_int16, samplesOut1_tmp_storage1 );
     VARDECL( opus_int16, samplesOut2_tmp );

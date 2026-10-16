@@ -1,0 +1,29 @@
+--- a/FlutterRTCAudioSink.mm
++++ b/FlutterRTCAudioSink.mm
+@@ -1,0 +2 @@
++#include <stdint.h>
+@@ -29,0 +31,11 @@
++    // Core Audio fields are UInt32. Validate before multiplying or narrowing;
++    // malformed callback dimensions must not wrap into a smaller audio buffer.
++    if (audio_data == nullptr || bits_per_sample <= 0 || bits_per_sample % 8 != 0 ||
++        sample_rate <= 0 || number_of_channels == 0 || number_of_frames == 0) return;
++    const size_t bytesPerSample = static_cast<size_t>(bits_per_sample / 8);
++    if (number_of_channels > UINT32_MAX / bytesPerSample) return;
++    const size_t bytesPerFrame = bytesPerSample * number_of_channels;
++    if (number_of_frames > UINT32_MAX / bytesPerFrame) return;
++    const UInt32 channels = static_cast<UInt32>(number_of_channels);
++    const UInt32 frameBytes = static_cast<UInt32>(bytesPerFrame);
++    const UInt32 bufferBytes = static_cast<UInt32>(bytesPerFrame * number_of_frames);
+@@ -33,2 +45,2 @@
+-    audioBuffer.mDataByteSize = bits_per_sample / 8 * number_of_channels * number_of_frames;
+-    audioBuffer.mNumberChannels = number_of_channels;
++    audioBuffer.mDataByteSize = bufferBytes;
++    audioBuffer.mNumberChannels = channels;
+@@ -38 +50 @@
+-    audioDescription.mBytesPerFrame = bits_per_sample / 8 * number_of_channels;
++    audioDescription.mBytesPerFrame = frameBytes;
+@@ -40,2 +52,2 @@
+-    audioDescription.mBytesPerPacket = bits_per_sample / 8 * number_of_channels;
+-    audioDescription.mChannelsPerFrame = number_of_channels;
++    audioDescription.mBytesPerPacket = frameBytes;
++    audioDescription.mChannelsPerFrame = channels;

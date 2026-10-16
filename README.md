@@ -1,6 +1,6 @@
 # 曙光之声 · DawnMesh iOS
 
-当前 iOS 版本：**1.0.1**。详见 [发布说明](docs/RELEASE_1.0.1.md)。
+当前 iOS 版本：**1.0.2**。详见 [发布说明](docs/RELEASE_1.0.2.md)。
 
 独立的 iOS 客户端源码仓库，功能基线为 DawnMesh Android **1.1.0**。iOS 宿主源自最初参考的 [SunsetRipple](https://github.com/Starlordzz/sunsetripple) 提交 `f63d418f7637972e5728e54cfcc7c8afbf25d26d`，共享 Dart 会话、UI、密码学与协议来自安卓版，保留 Apache-2.0 许可。
 

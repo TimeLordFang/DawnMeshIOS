@@ -1,0 +1,8 @@
+--- a/LiveKitPlugin.swift
++++ b/LiveKitPlugin.swift
+@@ -135 +135 @@
+-        "allowBluetooth": .allowBluetooth,
++        "allowBluetooth": .allowBluetoothHFP,
+@@ -1137 +1137 @@
+-        configuration.categoryOptions = [.allowBluetooth, .allowBluetoothA2DP, .allowAirPlay]
++        configuration.categoryOptions = [.allowBluetoothHFP, .allowBluetoothA2DP, .allowAirPlay]

@@ -1,0 +1,17 @@
+--- a/AudioUtils.m
++++ b/AudioUtils.m
+@@ -26 +26 @@
+-            AVAudioSessionCategoryOptionAllowBluetooth |
++            AVAudioSessionCategoryOptionAllowBluetoothHFP |
+@@ -86 +86 @@
+-                                        AVAudioSessionCategoryOptionAllowBluetooth
++                                        AVAudioSessionCategoryOptionAllowBluetoothHFP
+@@ -99 +99 @@
+-                                        AVAudioSessionCategoryOptionAllowBluetooth
++                                        AVAudioSessionCategoryOptionAllowBluetoothHFP
+@@ -119 +119 @@
+-                                      AVAudioSessionCategoryOptionAllowBluetooth |
++                                      AVAudioSessionCategoryOptionAllowBluetoothHFP |
+@@ -209 +209 @@
+-        config.categoryOptions |= AVAudioSessionCategoryOptionAllowBluetooth;
++        config.categoryOptions |= AVAudioSessionCategoryOptionAllowBluetoothHFP;

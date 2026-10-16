@@ -1,0 +1,14 @@
+--- a/FlutterRTCMediaRecorder.m
++++ b/FlutterRTCMediaRecorder.m
+@@ -74,0 +75 @@
++        __weak FlutterRTCMediaRecorder *weakSelf = self;
+@@ -76,2 +77,4 @@
+-            if (self->_audioWriter.readyForMoreMediaData) {
+-                if ([self->_audioWriter appendSampleBuffer:buffer])
++            FlutterRTCMediaRecorder *strongSelf = weakSelf;
++            if (strongSelf == nil) return;
++            if (strongSelf->_audioWriter.readyForMoreMediaData) {
++                if ([strongSelf->_audioWriter appendSampleBuffer:buffer])
+@@ -80 +83 @@
+-                    NSLog(@"Audioframe not appended %@", self.assetWriter.error);
++                    NSLog(@"Audioframe not appended %@", strongSelf.assetWriter.error);
