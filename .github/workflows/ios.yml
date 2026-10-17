@@ -28,7 +28,24 @@ jobs:
       - run: flutter config --no-enable-swift-package-manager
       - run: flutter pub get --enforce-lockfile
       - run: flutter analyze
-      - run: flutter test --concurrency=1
+      - name: Flutter tests and failure diagnostics
+        shell: bash
+        run: |
+          set +e
+          flutter test --concurrency=1 --reporter expanded > "$RUNNER_TEMP/dawnmesh-flutter-test.log" 2>&1
+          dawnmesh_test_status=$?
+          cat "$RUNNER_TEMP/dawnmesh-flutter-test.log"
+          if [ "$dawnmesh_test_status" -ne 0 ]; then
+            python3 - "$RUNNER_TEMP/dawnmesh-flutter-test.log" <<'PYTHON'
+          import pathlib, sys
+          lines = pathlib.Path(sys.argv[1]).read_text(errors='replace').splitlines()
+          failures = [line[:350] for line in lines if any(marker in line for marker in ['[E]', 'Expected:', 'Actual:', 'TestFailure', 'TimeoutException', 'Failed to load'])]
+          message = '\n'.join(failures[:12] + lines[-20:])[:6000]
+          message = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print('::error title=Flutter test failures::' + message)
+          PYTHON
+          fi
+          exit "$dawnmesh_test_status"
       - run: ./scripts/check-native.sh
       - name: Build iOS and expose compiler diagnostics
         shell: bash
