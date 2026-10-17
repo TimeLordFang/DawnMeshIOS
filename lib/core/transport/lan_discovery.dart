@@ -16,6 +16,9 @@ class DiscoveredRoom {
   final InternetAddress hostAddress;
   final int port;
   final int memberCount;
+
+  /// Opaque native Bonjour endpoint; retains the Apple peer interface scope.
+  final String? applePeerService;
   final DateTime lastSeen;
 
   DiscoveredRoom({
@@ -26,6 +29,7 @@ class DiscoveredRoom {
     required this.port,
     required this.memberCount,
     required this.lastSeen,
+    this.applePeerService,
   });
 
   @override
@@ -267,6 +271,7 @@ class LanRoomDiscovery {
     if (address == null) return;
     _handleIncomingPacket(
       Datagram(utf8.encode(jsonEncode(room)), address, port),
+      applePeerService: room["peerService"] as String?,
     );
   }
 
@@ -356,7 +361,7 @@ class LanRoomDiscovery {
     }
   }
 
-  void _handleIncomingPacket(Datagram datagram) {
+  void _handleIncomingPacket(Datagram datagram, {String? applePeerService}) {
     final Map<String, dynamic> json;
     try {
       json = jsonDecode(utf8.decode(datagram.data)) as Map<String, dynamic>;
@@ -411,6 +416,7 @@ class LanRoomDiscovery {
         hostAddress: datagram.address,
         port: port,
         memberCount: ((json["members"] as int?) ?? 0).clamp(0, 99),
+        applePeerService: applePeerService,
         lastSeen: DateTime.now(),
       );
 
@@ -466,7 +472,7 @@ class LanRoomDiscovery {
         .map(
           (r) =>
               '${r.roomId}|${r.roomName}|${r.hostNickname}|'
-              '${r.hostAddress.address}|${r.port}|${r.memberCount}',
+              '${r.hostAddress.address}|${r.port}|${r.memberCount}|${r.applePeerService}',
         )
         .join(';');
     if (signature == _lastRoomsSignature) return;

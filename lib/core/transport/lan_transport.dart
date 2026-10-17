@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
+
+import 'package:flutter/services.dart';
 
 import '../diagnostics/app_log.dart';
 import '../protocol/frame.dart';
@@ -88,6 +89,9 @@ class LanTransport implements RoomTransport {
   InternetAddress? _hostAddress;
   InternetAddress? _reconnectHostAddress;
   int _reconnectPort = controlPort;
+  static const _applePeer = MethodChannel('dev.dawnmesh.intercom/apple_peer');
+  String? _reconnectAppleService;
+  String? _appleConnectionId;
   int _clientGeneration = 0;
   bool _hostDisconnectReported = false;
 
@@ -202,6 +206,7 @@ class LanTransport implements RoomTransport {
       hostAddress: target,
       port: port ?? _reconnectPort,
       silent: true,
+      applePeerService: _reconnectAppleService,
     );
   }
 
@@ -295,26 +300,56 @@ class LanTransport implements RoomTransport {
     required InternetAddress hostAddress,
     int port = controlPort,
     bool silent = false,
+    String? applePeerService,
   }) async {
     await stop();
     _reconnectHostAddress = hostAddress;
     _reconnectPort = port;
+    _reconnectAppleService = applePeerService;
     _role = TransportRole.client;
     _hostAddress = hostAddress;
     _hostDisconnectReported = false;
     final generation = ++_clientGeneration;
 
     try {
-      _hostSocket = await Socket.connect(
-        hostAddress,
-        port,
+      var targetPort = port;
+      if (applePeerService != null) {
+        if (!controlOnly) {
+          throw StateError('Apple peer rooms require encrypted TCP transport');
+        }
+        final proxy = await _applePeer
+            .invokeMapMethod<String, dynamic>('open', {
+              'service': applePeerService,
+            })
+            .timeout(const Duration(seconds: 16));
+        if (proxy == null) {
+          throw const SocketException('Apple peer service no longer available');
+        }
+        final connectionId = proxy['connectionId'] as String;
+        if (generation != _clientGeneration) {
+          await _applePeer.invokeMethod<void>('close', {
+            'connectionId': connectionId,
+          });
+          return false;
+        }
+        _appleConnectionId = connectionId;
+        targetPort = proxy['port'] as int;
+      }
+      final connected = await Socket.connect(
+        applePeerService == null ? hostAddress : InternetAddress.loopbackIPv4,
+        targetPort,
         timeout: const Duration(seconds: 4),
       );
+      if (generation != _clientGeneration) {
+        connected.destroy();
+        return false;
+      }
+      _hostSocket = connected;
     } on SocketException catch (e) {
       if (!silent) {
         AppLog.error(_tag, '连接房主 ${hostAddress.address}:$port 失败', e);
       }
-      _role = TransportRole.idle;
+      if (generation == _clientGeneration) await stop();
       return false;
     } on TimeoutException {
       if (!silent) {
@@ -323,10 +358,18 @@ class LanTransport implements RoomTransport {
           '连接房主 ${hostAddress.address}:$port 超时，请确认在同一个 WiFi/热点下',
         );
       }
-      _role = TransportRole.idle;
+      if (generation == _clientGeneration) await stop();
+      return false;
+    } on PlatformException catch (e) {
+      if (!silent) AppLog.error(_tag, '苹果点对点 Wi-Fi 连接失败', e);
+      if (generation == _clientGeneration) await stop();
       return false;
     }
 
+    if (generation != _clientGeneration) {
+      _hostSocket?.destroy();
+      return false;
+    }
     final socket = _hostSocket!;
     socket.setOption(SocketOption.tcpNoDelay, true);
     final accumulator = _FrameAccumulator();
@@ -599,6 +642,17 @@ class LanTransport implements RoomTransport {
   @override
   Future<void> stop() async {
     _clientGeneration++;
+    final appleConnection = _appleConnectionId;
+    _appleConnectionId = null;
+    if (appleConnection != null) {
+      try {
+        await _applePeer.invokeMethod<void>('close', {
+          'connectionId': appleConnection,
+        });
+      } catch (error) {
+        AppLog.debug(_tag, '关闭苹果点对点链路：$error');
+      }
+    }
     _udpKeepalive?.cancel();
     _udpKeepalive = null;
 

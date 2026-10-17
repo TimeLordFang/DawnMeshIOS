@@ -21,6 +21,7 @@
 		AC10C0DE0000000000000002 /* DawnMeshPlatformPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB10C0DE0000000000000002 /* DawnMeshPlatformPlugin.swift */; };
 		AC10C0DE0000000000000003 /* BonjourDiscoveryPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB10C0DE0000000000000003 /* BonjourDiscoveryPlugin.swift */; };
 		AC10C0DE0000000000000004 /* WireSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB10C0DE0000000000000004 /* WireSupport.swift */; };
+		AC10C0DE0000000000000007 /* ApplePeerWiFi.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB10C0DE0000000000000007 /* ApplePeerWiFi.swift */; };
 		AD10C0DE0000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AD10C0DE0000000000000002 /* PrivacyInfo.xcprivacy */; };
 		AD10C0DE0000000000000003 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = AD10C0DE0000000000000004 /* InfoPlist.strings */; };
 		DE0085097722B6162361D8D7 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7C58758BAF6582B243A16DBE /* Pods_Runner.framework */; };
@@ -78,6 +79,7 @@
 		AB10C0DE0000000000000002 /* DawnMeshPlatformPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DawnMeshPlatformPlugin.swift; sourceTree = "<group>"; };
 		AB10C0DE0000000000000003 /* BonjourDiscoveryPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonjourDiscoveryPlugin.swift; sourceTree = "<group>"; };
 		AB10C0DE0000000000000004 /* WireSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WireSupport.swift; sourceTree = "<group>"; };
+		AB10C0DE0000000000000007 /* ApplePeerWiFi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePeerWiFi.swift; sourceTree = "<group>"; };
 		AD10C0DE0000000000000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AD10C0DE0000000000000005 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		AD10C0DE0000000000000006 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
@@ -173,6 +175,7 @@
 				AB10C0DE0000000000000002 /* DawnMeshPlatformPlugin.swift */,
 				AB10C0DE0000000000000003 /* BonjourDiscoveryPlugin.swift */,
 				AB10C0DE0000000000000004 /* WireSupport.swift */,
+				AB10C0DE0000000000000007 /* ApplePeerWiFi.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -428,6 +431,7 @@
 				AC10C0DE0000000000000002 /* DawnMeshPlatformPlugin.swift in Sources */,
 				AC10C0DE0000000000000003 /* BonjourDiscoveryPlugin.swift in Sources */,
 				AC10C0DE0000000000000004 /* WireSupport.swift in Sources */,
+				AC10C0DE0000000000000007 /* ApplePeerWiFi.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				AA10C0DE00000000000000B1 /* PlatformAudioPlugin.swift in Sources */,
 				AA10C0DE00000000000000B2 /* BleL2capPlugin.swift in Sources */,

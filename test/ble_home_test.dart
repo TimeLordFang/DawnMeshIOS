@@ -1,6 +1,7 @@
 import 'package:dawn_mesh/core/security/room_invite.dart';
 import 'package:dawn_mesh/core/protocol/frame.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dawn_mesh/core/audio/audio_io.dart';
@@ -157,5 +158,27 @@ void main() {
     expect(find.textContaining('蓝牙广播未能开启'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 4));
+  });
+  testWidgets('iOS Bluetooth host button invokes native advertising', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+    });
+    advertisingWorks = false;
+    await showHome(tester);
+    await tester.tap(find.text('Create Bluetooth room'));
+    await tester.pump();
+    await tester.tap(find.text('创建房间'));
+    await tester.pump();
+    await pumpUntil(
+      tester,
+      () => calls.any((c) => c.method == 'startAdvertising'),
+    );
+    expect(entered, isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 4));
+    debugDefaultTargetPlatformOverride = null;
   });
 }

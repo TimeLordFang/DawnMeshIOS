@@ -1,16 +1,26 @@
 # 首版延期事项与后续计划
 
-## 1. Wi-Fi Direct 自动组网
+## 1. 苹果点对点 Wi-Fi 与 Android Wi-Fi Direct
 
-iOS 15 基线没有对等的公开 Android WifiP2pManager 接口。首版用同一 Wi-Fi/热点，保持应用层帧、邀请码与加密一致。后续研究较新系统的邻近网络能力前，先验证跨 Android 的兼容性与可部署系统范围；不直接替换为只支持 Apple 设备的 MultipeerConnectivity。
+1.0.3 的普通 Wi-Fi 房使用 `NWBrowser`、`NWListener` 和 `NWConnection`，三个环节均设置 `includePeerToPeer = true`。保留 Bonjour 服务端点及其接口信息，由 Network.framework 处理点对点链路和 IPv6 作用域。原生转接只绑定本机回环端口，将已有的加密 TCP 协议送入 Dart 传输层；房主仍监听原有 IPv4 LAN 端口，保持安卓同网兼容。每方向最多一个 4096 字节转发块在途，并有建链超时、连接数上限和断线清理。
+
+两台 iOS 的普通 Wi-Fi 房可在没有共同路由器、没有互联网时尝试发现和连接，需开启 Wi-Fi/蓝牙、授权本地网络并先保持前台。该链路仅用于苹果设备；Android Wi-Fi Direct 的无线协议不与之互通。iOS 与安卓仍使用共同 Wi-Fi/热点、蓝牙或公网房。融合房暂不接入苹果点对点路径，继续使用现有 LAN/公网中继。
+
+源码和真实回环 TCP 测试不等同于无线验收。需两台 iPhone 验证首次发现、无共同 AP、弱信号、Wi-Fi/蓝牙开关、漫游与锁屏；16 人是应用协议上限，实际无线容量须测试。
+
+参考：[Apple TN3151](https://developer.apple.com/documentation/technotes/tn3151-choosing-the-right-networking-api)。
 
 ## 2. iOS 蓝牙建房
 
-[CoreBluetooth startAdvertising](https://developer.apple.com/documentation/corebluetooth/cbperipheralmanager/startadvertising(_:))只允许 local name 和 service UUID；后台还会移除 local name。Android 1.1.0 读取公司号 `0xFFFF` 的厂商字段 PSM/人数。把 `DM_PSM_NAME` 塞到 local name 不会让现有安卓解析器发现房间。
+1.0.3 实现 `CBPeripheralManager` 房主，动态发布未配对 L2CAP CoC，并通过可读 GATT characteristic 发布房名、人数和系统分配的 PSM。邀请码 PAKE 与加密数据帧保持不变。系统广播仅发布既有服务 UUID，不把 PSM 塞入 local name 或不受支持的厂商数据字段。
 
-首版 iOS central 读取现有 Android 广播、打开未配对 L2CAP CoC，并在 Dart 层执行现有 PAKE。iOS 的“蓝牙建房”按钮禁用，原生也明确拒绝该调用。
+元数据服务 UUID 为 `7f75d4e0-7a46-4d74-9f8d-1e4bc5e4b004`，特征 UUID 为 `7f75d4e1-7a46-4d74-9f8d-1e4bc5e4b004`。值为 `version=1:u8 | PSM:u16be | members:u8 | roomName:utf8`，名称最多 64 字节，总长 4…68 字节；PSM 1…255、人数 1…6，拒绝无效 UTF-8 和控制字符。元数据不作为认证凭据，入房仍执行 PAKE。
 
-后续先设计跨平台 GATT 房间元数据/动态 PSM 读取，再同时升级 Android 扫描器与 iOS peripheral。保留旧厂商广告向后兼容；验收 iOS↔Android 双向建房、六人容量、后台广告、蓝牙开关与 PSM 重建。
+iOS 1.0.3 和 Android 1.1.4 均可读取这套发现信息；继续识别旧安卓 `0xFFFF` 厂商广播。旧安卓版不会发现 iOS 房主，需升级。iOS 房主限制最多 5 条客户端通道，逐链路维护有界发送队列与停滞超时；认证后的密文由 Dart 决定转发，禁止客户端注入房主命令。蓝牙开关恢复时重新分配并发布 PSM。
+
+需真机、蓝牙开启和授权；标准 Core Bluetooth 不需 MFi 配件或额外组播 entitlement。已声明 `bluetooth-peripheral` 后台模式，但 iOS 后台广告服务 UUID 会进入 Apple overflow 区，安卓不能依赖它发现新房间。因此建房/首次加入保持房主前台，锁屏既有通话与重连仍需实测。不承诺硬件能稳定承载协议上限的六人语音。
+
+参考：[L2CAP 发布](https://developer.apple.com/documentation/corebluetooth/cbperipheralmanager/publishl2capchannel(withencryption:))、[广播限制](https://developer.apple.com/documentation/corebluetooth/cbperipheralmanager/startadvertising(_:))。
 
 ## 3. Android UDP 自动发现
 

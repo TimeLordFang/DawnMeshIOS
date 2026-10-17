@@ -125,3 +125,35 @@ struct DawnDiscoveryLedger {
         return removed
     }
 }
+
+// Cross-platform GATT metadata: version(1), PSM(big endian,2), members(1), UTF-8 name.
+// Discovery is untrusted. Admission and encrypted frame validation remain mandatory.
+struct DawnBleMetadata {
+    static func encode(psm: Int, members: Int, name: String) -> Data {
+        var bytes = Data([1, UInt8((psm >> 8) & 255), UInt8(psm & 255), UInt8(max(1, min(6, members)))])
+        var text = ""
+        for scalar in name.unicodeScalars where !CharacterSet.controlCharacters.contains(scalar) {
+            let next = text + String(scalar)
+            if next.utf8.count > 64 { break }
+            text = next
+        }
+        bytes.append(contentsOf: text.utf8)
+        return bytes
+    }
+    static func parse(_ bytes: Data) -> AndroidBleRoom? {
+        guard (4...68).contains(bytes.count), bytes[0] == 1,
+              let text = String(data: bytes.dropFirst(4), encoding: .utf8),
+              !text.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) else { return nil }
+        let psm = Int(bytes[1]) << 8 | Int(bytes[2])
+        let members = Int(bytes[3])
+        guard (1...255).contains(psm), (1...6).contains(members) else { return nil }
+        return AndroidBleRoom(psm: psm, members: members, name: text.isEmpty ? "蓝牙房" : text)
+    }
+    static func mayRelayFromClient(_ frame: Data, authenticated: Bool) -> Bool {
+        guard let type = frame.first else { return false }
+        if [3, 7, 8, 13, 16].contains(type) { return false }
+        // Fragments carry the original control type in their first payload byte.
+        if type == 19, frame.count > 6, [3, 7, 8, 13, 16].contains(frame[6]) { return false }
+        return !(authenticated && type == 11)
+    }
+}

@@ -57,3 +57,18 @@ expect(Set(discovery.observe("later", now: 40, protecting: "connected") ?? []) =
 expect(discovery.observe("connected", now: 41, protecting: "connected") == [], "Protected device retained")
 for index in 0..<130 { expect(discovery.observe("device-\(index)", now: Double(42 + index), protecting: "connected") != nil, "Discovery continues beyond 64 devices") }
 print("Discovery cache checks passed")
+
+let gatt = DawnBleMetadata.encode(psm: 129, members: 3, name: "房😀间")
+expect(gatt == Data([1, 0, 129, 3] + Array("房😀间".utf8)), "Cross-platform GATT fixture")
+expect(DawnBleMetadata.parse(gatt)?.name == "房😀间", "GATT Unicode round trip")
+for bad in [Data(), Data([2, 0, 129, 1]), Data([1, 1, 0, 1]), Data([1, 0, 129, 7]), Data([1, 0, 129, 1, 255]), Data([1, 0, 129, 1, 0]), Data([1, 0, 129, 1] + Array(repeating: 65, count: 65))] {
+    expect(DawnBleMetadata.parse(bad) == nil, "Reject malformed GATT metadata")
+}
+expect(DawnBleMetadata.encode(psm: 129, members: 1, name: String(repeating: "😀", count: 30)).count == 68, "GATT name UTF-8 byte budget")
+for type: UInt8 in [3, 7, 8, 13, 16] {
+    expect(!DawnBleMetadata.mayRelayFromClient(Data([type, 1, 0, 0, 0, 0]), authenticated: true), "Reject client host commands")
+    expect(!DawnBleMetadata.mayRelayFromClient(Data([19, 1, 0, 0, 0, 1, type]), authenticated: true), "Reject fragmented host commands")
+}
+expect(!DawnBleMetadata.mayRelayFromClient(packet, authenticated: true), "Sealed frame awaits authentication before relay")
+expect(DawnBleMetadata.mayRelayFromClient(Data([9, 0, 0, 0, 0, 0]), authenticated: true), "Allow PAKE handshake")
+print("GATT metadata / host relay security: \(checks) total checks passed")

@@ -18,51 +18,47 @@ void main() {
     expect(usesIosUi, isFalse);
   });
 
-  testWidgets(
-    'iOS shows LAN address entry and disables incompatible BLE hosting',
-    (tester) async {
-      tester.view.physicalSize = const Size(900, 1400);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final messenger =
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-      for (final name in ['ble_l2cap', 'ble_l2cap_scan', 'ble_l2cap_data']) {
-        final channel = MethodChannel('dev.dawnmesh.intercom/$name');
-        messenger.setMockMethodCallHandler(channel, (_) async => true);
-        addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
-      }
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: HomeContent(
-              isNight: false,
-              stage: const AlwaysStoppedAnimation(0),
-              audioIo: MockAudioIo(),
-              onEnterRoom: (_, _) {},
-            ),
+  testWidgets('iOS shows LAN address entry and enables Bluetooth hosting', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    for (final name in ['ble_l2cap', 'ble_l2cap_scan', 'ble_l2cap_data']) {
+      final channel = MethodChannel('dev.dawnmesh.intercom/$name');
+      messenger.setMockMethodCallHandler(channel, (_) async => true);
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    }
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HomeContent(
+            isNight: false,
+            stage: const AlwaysStoppedAnimation(0),
+            audioIo: MockAudioIo(),
+            onEnterRoom: (_, _) {},
           ),
         ),
-      );
-      await tester.pump();
-      expect(find.byKey(const ValueKey('manual-lan-join')), findsOneWidget);
-      await tester.tap(find.text('Bluetooth room'));
-      await tester.pump();
-      final create = find.widgetWithText(
-        ElevatedButton,
-        'Create Bluetooth room',
-      );
-      expect(tester.widget<ElevatedButton>(create).onPressed, isNull);
-      expect(
-        find.text(
-          'Join an Android Bluetooth room. iOS Bluetooth hosting is planned.',
-        ),
-        findsOneWidget,
-      );
-      await tester.pumpWidget(const SizedBox());
-      await tester.pump(const Duration(seconds: 4));
-      debugDefaultTargetPlatformOverride = null;
-    },
-  );
+      ),
+    );
+    await tester.pump();
+    expect(find.byKey(const ValueKey('manual-lan-join')), findsOneWidget);
+    await tester.tap(find.text('Bluetooth room'));
+    await tester.pump();
+    final create = find.widgetWithText(ElevatedButton, 'Create Bluetooth room');
+    expect(tester.widget<ElevatedButton>(create).onPressed, isNotNull);
+    expect(
+      find.text(
+        'Nearby Bluetooth rooms work with updated iOS and Android clients.',
+      ),
+      findsOneWidget,
+    );
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 4));
+    debugDefaultTargetPlatformOverride = null;
+  });
 
   testWidgets('manual local entry rejects invalid and IPv6 addresses', (
     tester,

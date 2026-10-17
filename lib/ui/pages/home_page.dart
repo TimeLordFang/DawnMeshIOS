@@ -665,8 +665,8 @@ class _HomeContentState extends State<HomeContent> {
                             )
                           : Text(
                               s.isEn
-                                  ? 'Join an Android Bluetooth room. iOS Bluetooth hosting is planned.'
-                                  : '可加入安卓蓝牙房。iOS 蓝牙建房后续适配。',
+                                  ? 'Nearby Bluetooth rooms work with updated iOS and Android clients.'
+                                  : '支持附近 iOS 和新版安卓设备通过蓝牙建房、加入。',
                             ),
                     ),
 
@@ -681,12 +681,7 @@ class _HomeContentState extends State<HomeContent> {
                           Expanded(
                             flex: 6,
                             child: ElevatedButton(
-                              onPressed:
-                                  _busy ||
-                                      _hasAnyActiveRoom ||
-                                      (usesIosUi &&
-                                          _selectedMode ==
-                                              RoomMode.bluetoothPtt)
+                              onPressed: _busy || _hasAnyActiveRoom
                                   ? null
                                   : _onCreateRoom,
                               style: ElevatedButton.styleFrom(
@@ -1093,14 +1088,6 @@ class _HomeContentState extends State<HomeContent> {
 
   void _onCreateRoom() async {
     if (_busy || _hasAnyActiveRoom) return;
-    if (usesIosUi && _selectedMode == RoomMode.bluetoothPtt) {
-      _showConnectionError(
-        AppStrings.of(context).isEn
-            ? 'Join an Android Bluetooth host, or create a Wi-Fi room.'
-            : '请选择安卓蓝牙房主加入，或使用 Wi-Fi 建房。',
-      );
-      return;
-    }
     setState(() => _busy = true);
     final invite = await requestRoomInvite(context, creating: true);
     if (!mounted) return;
@@ -1224,6 +1211,7 @@ class _HomeContentState extends State<HomeContent> {
     if (!await transport.startClient(
       hostAddress: room.hostAddress,
       port: room.port,
+      applePeerService: room.applePeerService,
     )) {
       await transport.dispose();
       if (mounted) setState(() => _busy = false);

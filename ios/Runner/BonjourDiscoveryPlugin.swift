@@ -9,11 +9,34 @@ final class BonjourDiscoveryPlugin: NSObject, FlutterPlugin, NetServiceBrowserDe
     private var services = [String: [NetService]]()
     private var publications = [String: NetService]()
     private let events = DawnEventStream()
+    private let applePeer = DawnApplePeerWiFi()
+    private var peerBrowseID: String?
 
     static func register(with registrar: FlutterPluginRegistrar) {
         let instance = BonjourDiscoveryPlugin()
         let channel = FlutterMethodChannel(name: "dev.dawnmesh.intercom/bonjour", binaryMessenger: registrar.messenger())
         registrar.addMethodCallDelegate(instance, channel: channel)
+        let peerChannel = FlutterMethodChannel(name: "dev.dawnmesh.intercom/apple_peer", binaryMessenger: registrar.messenger())
+        peerChannel.setMethodCallHandler { call, result in
+            let args = call.arguments as? [String: Any] ?? [:]
+            if call.method == "open", let service = args["service"] as? String {
+                instance.applePeer.open(service) { result($0) }
+            } else if call.method == "close", let id = args["connectionId"] as? String {
+                instance.applePeer.close(id); result(nil)
+            } else { result(FlutterMethodNotImplemented) }
+        }
+        instance.applePeer.onRoom = { [weak instance] room in
+            guard let instance = instance, let id = instance.peerBrowseID else { return }
+            instance.events.sink?(room.merging(["id": id, "magic": "DAWN_MESH_DISCOVERY_V1"], uniquingKeysWith: { _, new in new }))
+        }
+        instance.applePeer.onRemoved = { [weak instance] service in
+            guard let instance = instance, let id = instance.peerBrowseID else { return }
+            instance.events.sink?(["type": "removed", "service": service, "id": id])
+        }
+        instance.applePeer.onError = { [weak instance] message in
+            guard let instance = instance, let id = instance.peerBrowseID else { return }
+            instance.events.sink?(["type": "error", "message": message, "id": id])
+        }
         FlutterEventChannel(name: "dev.dawnmesh.intercom/bonjour_events", binaryMessenger: registrar.messenger()).setStreamHandler(instance.events)
     }
     private func serviceType(_ magic: String) -> String { magic == "DAWN_MESH_FUSION_V1" ? "_dawnfusion._tcp." : "_dawnmesh._tcp." }
@@ -22,6 +45,20 @@ final class BonjourDiscoveryPlugin: NSObject, FlutterPlugin, NetServiceBrowserDe
         guard let magic = args["magic"] as? String else { result(false); return }
         let type = serviceType(magic)
         let id = args["id"] as? String ?? magic
+        if magic == "DAWN_MESH_DISCOVERY_V1" {
+            switch call.method {
+            case "start": peerBrowseID = id; applePeer.startBrowsing(); result(true)
+            case "advertise":
+                guard let port = args["port"] as? Int, (1...65535).contains(port), let roomID = args["roomId"] as? String else { result(false); return }
+                let values = ["roomId": String(roomID.prefix(48)), "roomName": String((args["roomName"] as? String ?? "").prefix(48)), "hostNickname": String((args["hostNickname"] as? String ?? "").prefix(48)), "members": String(args["members"] as? Int ?? 1), "port": String(port)]
+                do { try applePeer.advertise(values: values, port: UInt16(port)); result(true) }
+                catch { result(FlutterError(code: "APPLE_PEER_LISTEN", message: "无法开启苹果点对点 Wi-Fi", details: String(describing: error))) }
+            case "stopAdvertising": applePeer.stopAdvertising(); result(nil)
+            case "stop": if peerBrowseID == id { applePeer.stopBrowsing(); applePeer.stopAdvertising(); peerBrowseID = nil }; result(nil)
+            default: result(FlutterMethodNotImplemented)
+            }
+            return
+        }
         switch call.method {
         case "start":
             stop(id)
