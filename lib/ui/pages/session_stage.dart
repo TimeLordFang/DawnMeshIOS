@@ -2,6 +2,7 @@ import '../../core/platform/ios_capabilities.dart';
 
 import 'dart:async';
 
+import '../widgets/ios_edge_back_gesture.dart';
 import '../widgets/ios_nearby_invite.dart';
 
 import 'package:flutter/material.dart';
@@ -384,6 +385,15 @@ class _SessionStageState extends State<SessionStage>
           ],
         ),
       ),
+    ).withIosEdgeBackGesture(
+      enabled: _roomVisible || keyboardOpen,
+      animateContent: !keyboardOpen,
+      onProgress: (progress) {
+        if (_roomVisible && !keyboardOpen && !_leaving) {
+          _stage.value = 1 - progress;
+        }
+      },
+      canStart: () => !_leaving && !_stage.isAnimating,
     );
   }
 

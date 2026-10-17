@@ -7,6 +7,7 @@ import 'package:dawn_mesh/ui/widgets/voice_mode_switch.dart';
 import 'package:dawn_mesh/ui/pages/internet_room_page.dart';
 import 'package:dawn_mesh/ui/pages/internet_home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -217,6 +218,81 @@ void main() {
     expect(find.text('App 主界面'), findsOneWidget);
     expect(retained, same(session));
   });
+
+  testWidgets(
+    'iOS edge back minimizes a public room and returns from its list',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final session = makeSession();
+      InternetRoomSession? retained = session;
+      addTearDown(session.disposeSession);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: FilledButton(
+                  onPressed: () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => InternetHomePage(
+                        isNight: false,
+                        nickname: '成员',
+                        activeSession: retained,
+                        reopenActiveRoom: true,
+                        onActiveSessionChanged: (value) => retained = value,
+                      ),
+                    ),
+                  ),
+                  child: const Text('App 主界面'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('App 主界面'));
+      await tester.pumpAndSettle();
+      expect(find.byType(InternetRoomPage), findsOneWidget);
+      final interactiveBack = await tester.startGesture(const Offset(2, 300));
+      await interactiveBack.moveTo(const Offset(170, 300));
+      await tester.pump();
+      expect(
+        tester.getTopLeft(find.byType(InternetRoomPage)).dx,
+        greaterThan(50),
+      );
+      await interactiveBack.moveTo(
+        const Offset(10, 300),
+        timeStamp: const Duration(milliseconds: 800),
+      );
+      await interactiveBack.up(timeStamp: const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(find.byType(InternetRoomPage), findsOneWidget);
+      expect(retained, same(session));
+
+      await tester.timedDragFrom(
+        const Offset(2, 300),
+        const Offset(650, 0),
+        const Duration(milliseconds: 600),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(InternetHomePage), findsOneWidget);
+      expect(find.byType(InternetRoomPage), findsNothing);
+
+      await tester.timedDragFrom(
+        const Offset(2, 300),
+        const Offset(650, 0),
+        const Duration(milliseconds: 600),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(InternetHomePage), findsNothing);
+      expect(find.text('App 主界面'), findsOneWidget);
+      expect(retained, same(session));
+      expect(session.roomEnded, isFalse);
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
 
   testWidgets(
     'public-room dock opens full chat and back closes keyboard first',

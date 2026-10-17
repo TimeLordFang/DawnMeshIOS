@@ -1,3 +1,5 @@
+import '../widgets/ios_edge_back_gesture.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -250,11 +252,13 @@ class _DebugLogPageState extends State<DebugLogPage> {
                     draft.maxPlayoutQueueFrames,
                   ].reduce((a, b) => a > b ? a : b).toDouble(),
                   max: 32,
-                  divisions: 32 - [
-                    draft.prebufferFrames,
-                    draft.maxAdaptiveFrames,
-                    draft.maxPlayoutQueueFrames,
-                  ].reduce((a, b) => a > b ? a : b),
+                  divisions:
+                      32 -
+                      [
+                        draft.prebufferFrames,
+                        draft.maxAdaptiveFrames,
+                        draft.maxPlayoutQueueFrames,
+                      ].reduce((a, b) => a > b ? a : b),
                   onChanged: (v) =>
                       update(draft.copyWith(maxBufferFrames: v.round())),
                 ),
@@ -338,7 +342,7 @@ class _DebugLogPageState extends State<DebugLogPage> {
             ),
           );
         },
-      ),
+      ).withIosEdgeBackGesture(),
     );
   }
 

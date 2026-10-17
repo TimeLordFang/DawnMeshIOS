@@ -9,6 +9,7 @@ import '../../core/session/device_code.dart';
 import '../../core/session/room_session.dart';
 import '../../core/platform/chat_media_service.dart';
 import '../../l10n/app_strings.dart';
+import 'ios_edge_back_gesture.dart';
 import '../theme/app_theme.dart';
 import 'avatar_frame.dart';
 import 'chat_image_bubble.dart';
@@ -769,6 +770,6 @@ class _RoomChatSheetState extends State<RoomChatSheet> {
           ),
         ),
       ),
-    );
+    ).withIosEdgeBackGesture(animateContent: keyboardHeight == 0);
   }
 }

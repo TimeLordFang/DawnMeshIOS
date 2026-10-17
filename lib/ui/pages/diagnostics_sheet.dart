@@ -1,4 +1,7 @@
+import '../widgets/ios_edge_back_gesture.dart';
+
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 import '../../l10n/app_strings.dart';
 
@@ -22,10 +25,12 @@ class DiagnosticsSheet extends StatelessWidget {
     final s = AppStrings.of(context);
     final bg = isNight ? AppTheme.darkBg : AppTheme.lightBg;
     final cardBg = isNight ? AppTheme.darkCardBg : AppTheme.lightCardBg;
-    final textPrimary =
-        isNight ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary;
-    final textSecondary =
-        isNight ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
+    final textPrimary = isNight
+        ? AppTheme.darkTextPrimary
+        : AppTheme.lightTextPrimary;
+    final textSecondary = isNight
+        ? AppTheme.darkTextSecondary
+        : AppTheme.lightTextSecondary;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -87,7 +92,7 @@ class DiagnosticsSheet extends StatelessWidget {
           const SizedBox(height: 24),
         ],
       ),
-    );
+    ).withIosEdgeBackGesture();
   }
 }
 

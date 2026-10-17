@@ -9,7 +9,7 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
     private lazy var central = CBCentralManager(delegate: self, queue: .main)
     private lazy var peripheralManager = CBPeripheralManager(delegate: self, queue: .main)
     private var peripherals = [String: CBPeripheral]()
-    private var rooms = [String: AndroidBleRoom]()
+    private var rooms = [String: DawnBleRoomRecord]()
     private var discovery = DawnDiscoveryLedger()
     private var lastReported = [String: TimeInterval]()
     private var metadataReads = [String: CBPeripheral]()
@@ -176,20 +176,25 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
         peripherals[id] = peripheral; rssi[id] = RSSI.intValue
         if let bytes = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data, let room = AndroidBleRoom.parse(bytes) {
             report(id, room: room, now: now)
-        } else {
-            if let room = rooms[id] { report(id, room: room, now: now) }
-            guard metadataReads[id] == nil, metadataReads.count < 4, peer !== peripheral, now - (lastRead[id] ?? -.infinity) >= 3 else { return }
-            lastRead[id] = now; metadataReads[id] = peripheral; peripheral.delegate = self
-            metadataTimers[id] = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self, weak peripheral] _ in
-                if let peripheral = peripheral { self?.finishMetadata(peripheral) }
-            }
-            central.connect(peripheral)
+        } else if let record = rooms[id] {
+            report(id, room: record.room, now: now)
         }
+        // Android's primary packet can contain a PSM but no name. Always try
+        // GATT as well, even when a manufacturer record was successfully parsed.
+        guard metadataReads[id] == nil, metadataReads.count < 4, peer !== peripheral, now - (lastRead[id] ?? -.infinity) >= 3 else { return }
+        lastRead[id] = now; metadataReads[id] = peripheral; peripheral.delegate = self
+        metadataTimers[id] = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self, weak peripheral] _ in
+            if let peripheral = peripheral { self?.finishMetadata(peripheral) }
+        }
+        if peripheral.state == .connected { peripheral.discoverServices([Self.service]) }
+        else if peripheral.state == .disconnected { central.connect(peripheral) }
     }
-    private func report(_ id: String, room: AndroidBleRoom, now: TimeInterval) {
-        let previous = rooms[id]
-        let name = room.name == "蓝牙房" ? previous?.name ?? room.name : room.name
-        rooms[id] = AndroidBleRoom(psm: room.psm, members: room.members, name: name)
+    private func report(_ id: String, room: AndroidBleRoom, now: TimeInterval, complete: Bool = false) {
+        let previous = rooms[id]?.room
+        var record = rooms[id] ?? DawnBleRoomRecord(room, complete: complete)
+        record.update(room, complete: complete)
+        rooms[id] = record
+        let name = record.room.name
         let changed = previous?.name != name || previous?.psm != room.psm || previous?.members != room.members
         guard scanning, changed || now - (lastReported[id] ?? -.infinity) >= 2 else { return }
         lastReported[id] = now
@@ -218,7 +223,7 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
     }
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         guard metadataReads[peripheral.identifier.uuidString] != nil, characteristic.uuid == Self.metadata else { return }
-        if error == nil, let data = characteristic.value, let room = DawnBleMetadata.parse(data) { report(peripheral.identifier.uuidString, room: room, now: ProcessInfo.processInfo.systemUptime) }
+        if error == nil, let data = characteristic.value, let room = DawnBleMetadata.parse(data) { report(peripheral.identifier.uuidString, room: room, now: ProcessInfo.processInfo.systemUptime, complete: true) }
         finishMetadata(peripheral)
     }
     public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {

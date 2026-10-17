@@ -1,8 +1,11 @@
+import '../../core/platform/ios_capabilities.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../widgets/ios_edge_back_gesture.dart';
 import '../widgets/noise_reduction_control.dart';
 import '../widgets/room_settings_button.dart';
 import '../widgets/presence_announcements_control.dart';
@@ -224,7 +227,7 @@ class _InternetRoomPageState extends State<InternetRoomPage>
       session: widget.session,
       isNight: widget.isNight,
       accent: widget.isNight ? AppTheme.nightSkyBlue : AppTheme.dawnBurgundy,
-    ),
+    ).withIosEdgeBackGesture(),
   );
 
   Future<void> _showChat({bool autofocusComposer = false}) async {
@@ -280,9 +283,13 @@ class _InternetRoomPageState extends State<InternetRoomPage>
             InternetConnectionState.disconnected => '连接未能恢复',
           };
     return PopScope(
-      canPop: false,
+      canPop: usesIosUi && !keyboardOpen,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
+        if (didPop) {
+          _dismissKeyboard();
+          unawaited(widget.session.setPtt(false));
+          return;
+        }
         if (keyboardOpen) {
           _dismissKeyboard();
         } else {
@@ -578,6 +585,10 @@ class _InternetRoomPageState extends State<InternetRoomPage>
           ),
         ),
       ),
+    ).withIosEdgeBackGesture(
+      enabled: keyboardOpen,
+      animateContent: false,
+      canStart: () => !_exiting,
     );
   }
 
@@ -1326,6 +1337,6 @@ class _InternetChatSheetState extends State<_InternetChatSheet> {
           ],
         ),
       ),
-    );
+    ).withIosEdgeBackGesture(animateContent: !keyboardOpen);
   }
 }

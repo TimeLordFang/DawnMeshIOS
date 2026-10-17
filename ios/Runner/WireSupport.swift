@@ -39,6 +39,22 @@ struct AndroidBleRoom {
     }
 }
 
+// Prefer complete GATT names over shorter manufacturer scan responses.
+struct DawnBleRoomRecord {
+    private(set) var room: AndroidBleRoom
+    private var complete: Bool
+    init(_ room: AndroidBleRoom, complete: Bool = false) {
+        self.room = room; self.complete = complete
+    }
+    mutating func update(_ incoming: AndroidBleRoom, complete: Bool) {
+        let sameChannel = incoming.psm == room.psm
+        let keepName = !complete && sameChannel && (self.complete || incoming.name == "蓝牙房")
+        room = AndroidBleRoom(psm: incoming.psm, members: incoming.members,
+                              name: keepName ? room.name : incoming.name)
+        self.complete = complete || (sameChannel && self.complete)
+    }
+}
+
 // A byte-stream write may consume only a prefix. Never discard its remainder.
 struct DawnWriteQueue {
     private struct Item { var bytes: Data; var offset = 0; let realtime: Bool; let created: TimeInterval }

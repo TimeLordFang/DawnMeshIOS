@@ -1,3 +1,5 @@
+import 'ios_edge_back_gesture.dart';
+
 import 'package:flutter/material.dart';
 
 /// One toolbar action leaves room names and live connection status readable.
@@ -76,7 +78,7 @@ class RoomSettingsButton extends StatelessWidget {
                         animation: listenable!,
                         builder: (_, _) => content(),
                       ),
-              );
+              ).withIosEdgeBackGesture();
             },
           );
         } finally {
