@@ -2,8 +2,8 @@ import Flutter
 import Foundation
 import Darwin
 
-// Bonjour provides iOS-to-iOS discovery without a multicast entitlement.
-// Android 1.1.0 advertises UDP only; users can join its unicast TCP endpoint.
+// Standard Bonjour interoperates with Android 1.1.7 NSD on a shared LAN.
+// Apple peer interfaces remain available to Apple clients without a shared AP.
 final class BonjourDiscoveryPlugin: NSObject, FlutterPlugin, NetServiceBrowserDelegate, NetServiceDelegate {
     private var browsers = [String: NetServiceBrowser]()
     private var services = [String: [NetService]]()

@@ -8,7 +8,7 @@ import '../diagnostics/app_log.dart';
 
 const String _tag = '房间发现';
 
-/// 通过 UDP 广播发现到的房间。
+/// 通过局域网 DNS-SD / UDP 或苹果点对点链路发现的房间。
 class DiscoveredRoom {
   final String roomId;
   final String roomName;
@@ -37,15 +37,19 @@ class DiscoveredRoom {
       'DiscoveredRoom($roomName by $hostNickname at ${hostAddress.address}:$port, $memberCount members)';
 }
 
-/// 局域网/热点下的零配置房间发现（UDP 8990 广播）。
+/// 局域网/热点下的 DNS-SD + UDP 发现；iOS 同时保留苹果点对点端点。
 class LanRoomDiscovery {
   LanRoomDiscovery({
     this.port = discoveryPort,
     this.magic = magicHeader,
     this.includeOwnRoom = false,
     this._bindSocket,
+    this._nativeDiscoveryEnabled,
   });
   final Future<RawDatagramSocket> Function(bool reusePort)? _bindSocket;
+  final bool? _nativeDiscoveryEnabled;
+  bool get _usesBonjour =>
+      _nativeDiscoveryEnabled ?? (Platform.isIOS || Platform.isAndroid);
   final int port;
   final String magic;
   final bool includeOwnRoom;
@@ -69,8 +73,8 @@ class LanRoomDiscovery {
   static const _bonjour = MethodChannel('dev.dawnmesh.intercom/bonjour');
   static final _bonjourEvents = const EventChannel(
     'dev.dawnmesh.intercom/bonjour_events',
-  ).receiveBroadcastStream().asBroadcastStream();
-  late final String _bonjourId = '$magic:$port:${identityHashCode(this)}';
+  ).receiveBroadcastStream();
+  String _bonjourId = '';
   StreamSubscription<dynamic>? _bonjourSubscription;
   final _bonjourRooms = <String, Map<String, dynamic>>{};
   Timer? _bonjourRefresh;
@@ -110,9 +114,17 @@ class LanRoomDiscovery {
       return false;
     }
     _socket = socket;
-    if (Platform.isIOS) {
+    if (_usesBonjour) {
+      final bonjourId = _bonjourId =
+          '$magic:$port:${identityHashCode(this)}:$generation';
+      var started = false;
       _bonjourSubscription = _bonjourEvents.listen((dynamic event) {
-        if (event is! Map || event['id'] != _bonjourId) return;
+        if (_disposed ||
+            generation != _generation ||
+            event is! Map ||
+            event['id'] != bonjourId) {
+          return;
+        }
         if (event['type'] == 'error') {
           AppLog.warn(_tag, event['message'] as String? ?? 'Bonjour 发现不可用');
           return;
@@ -120,24 +132,46 @@ class LanRoomDiscovery {
         final service = event['service'];
         if (service is! String) return;
         if (event['type'] == 'removed') {
-          _bonjourRooms.remove(service);
+          final old = _bonjourRooms.remove(service);
+          if (old != null) {
+            _discoveredRooms.removeWhere(
+              (_, known) =>
+                  known.roomId == old['roomId'] &&
+                  (known.applePeerService == service ||
+                      (known.hostAddress.address == old['address'] &&
+                          known.port == old['port'])),
+            );
+            _notifyRoomsChanged();
+          }
           return;
         }
-        if (event['type'] == 'room') {
+        if (event['type'] == 'room' &&
+            _validBonjour(event) &&
+            (_bonjourRooms.containsKey(service) ||
+                _bonjourRooms.length < maxDiscoveredRooms)) {
           _bonjourRooms[service] = Map<String, dynamic>.from(event);
           _acceptBonjour(_bonjourRooms[service]!);
         }
       }, onError: (Object error) => AppLog.warn(_tag, 'Bonjour 发现失败', error));
       try {
-        _bonjourActive =
+        started =
             await _bonjour.invokeMethod<bool>('start', {
               'magic': magic,
-              'id': _bonjourId,
+              'id': bonjourId,
             }) ??
             false;
+      } on MissingPluginException catch (error) {
+        AppLog.debug(_tag, '原生同网发现不可用，保留 UDP：$error');
       } on PlatformException catch (error) {
         AppLog.warn(_tag, '本地网络发现权限未就绪，可手动输入房主地址', error);
       }
+      if (_disposed || generation != _generation) {
+        await _bonjour
+            .invokeMethod<void>('stop', {'magic': magic, 'id': bonjourId})
+            .catchError((Object _) {});
+        return false;
+      }
+      _bonjourActive = started;
       _bonjourRefresh = Timer.periodic(const Duration(seconds: 1), (_) {
         for (final room in _bonjourRooms.values) {
           _acceptBonjour(room);
@@ -211,7 +245,7 @@ class LanRoomDiscovery {
 
     _selfRoomId = roomId;
     _broadcastTimer?.cancel();
-    if (Platform.isIOS) {
+    if (_usesBonjour) {
       _advertiseBonjour(
         roomId,
         roomName,
@@ -221,7 +255,7 @@ class LanRoomDiscovery {
       );
     }
     _broadcastTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (Platform.isIOS) {
+      if (_usesBonjour) {
         _advertiseBonjour(
           roomId,
           roomName,
@@ -244,7 +278,7 @@ class LanRoomDiscovery {
   /// 停止广播；[sendGoodbye] 为 true 时向局域网发送即时解散通知，
   /// 让其他设备列表立刻清除该房间，无需等待超时。
   void stopAdvertising({bool sendGoodbye = true}) {
-    if (Platform.isIOS && _bonjourActive) {
+    if (_usesBonjour && _bonjourActive) {
       unawaited(
         _bonjour
             .invokeMethod<void>('stopAdvertising', {
@@ -283,6 +317,23 @@ class LanRoomDiscovery {
     _broadcastTimer?.cancel();
     _broadcastTimer = null;
     _selfRoomId = null;
+  }
+
+  bool _validBonjour(Map<dynamic, dynamic> room) {
+    final address = room['address'];
+    final tcpPort = room['port'];
+    return room['magic'] == magic &&
+        room['roomId'] is String &&
+        (room['roomId'] as String).isNotEmpty &&
+        room['roomName'] is String &&
+        room['hostNickname'] is String &&
+        address is String &&
+        InternetAddress.tryParse(address) != null &&
+        tcpPort is int &&
+        tcpPort > 0 &&
+        tcpPort <= 65535 &&
+        (room['members'] == null || room['members'] is int) &&
+        (room['peerService'] == null || room['peerService'] is String);
   }
 
   void _acceptBonjour(Map<String, dynamic> room) {
@@ -500,26 +551,30 @@ class LanRoomDiscovery {
   }
 
   Future<void> stop() async {
+    final bonjourId = _bonjourId;
+    final stopBonjour = _bonjourActive;
     _generation++;
     stopAdvertising();
+    _bonjourActive = false;
     _pruneTimer?.cancel();
     _pruneTimer = null;
     _socket?.close();
     _socket = null;
     _bonjourRefresh?.cancel();
     _bonjourRefresh = null;
-    await _bonjourSubscription?.cancel();
+    final subscription = _bonjourSubscription;
     _bonjourSubscription = null;
     _bonjourRooms.clear();
-    if (Platform.isIOS && _bonjourActive) {
-      await _bonjour.invokeMethod<void>('stop', {
-        'magic': magic,
-        'id': _bonjourId,
-      });
-    }
-    _bonjourActive = false;
     _discoveredRooms.clear();
     _notifyRoomsChanged();
+    await subscription?.cancel();
+    if (_usesBonjour && stopBonjour) {
+      await _bonjour
+          .invokeMethod<void>('stop', {'magic': magic, 'id': bonjourId})
+          .catchError((Object error) {
+            AppLog.debug(_tag, '停止原生同网发现：$error');
+          });
+    }
   }
 
   void dispose() {

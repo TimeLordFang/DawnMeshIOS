@@ -28,7 +28,13 @@ iOS 1.0.3 和 Android 1.1.4 均可读取这套发现信息；继续识别旧安�
 
 本仓库默认 `Runner.entitlements` 只有 Keychain Sharing。`Multicast.entitlements.example` 是能力获批后使用的模板，不能直接保证签名可用。获得 Apple 批准与包含该能力的描述文件后，在 Xcode 为 Runner 的所有配置选择相应 entitlements，重签并测试现有 UDP 8990/8992 广播。不要在 CI 或分发包里无条件启用未经批准的 entitlement。
 
-无该能力时：iOS 间使用 Bonjour；iOS 加入安卓输入房主 IP；iOS 创建房后，房间设置“通知同网安卓设备”向指定安卓 IP 单播原版发现 JSON。单播地址在内存中最多保存 16 个，不扫描整个子网。Bonjour 服务类型为 `_dawnmesh._tcp` 与 `_dawnfusion._tcp`。
+iOS 1.0.6 配套 Android 1.1.7 后，两端同网使用系统 Bonjour/NSD 双向发现，服务类型为 `_dawnmesh._tcp` 与 `_dawnfusion._tcp`。具体服务类型已列入 Info.plist，因此无需新增 multicast entitlement。Android 使用解析后的 SRV 端口，兼容苹果点对点 TCP 转接的动态端口。
+
+旧安卓或过滤 mDNS 的网络可保留手动地址/单播路径：iOS 加入安卓输入房主 IP；iOS 房间设置“通知同网安卓设备”向指定安卓 IP 单播 JSON。单播地址只在内存中最多保存 16 个。用户拒绝本地网络权限或 AP 开启客户端隔离时，手动地址也不能保证可达。
+
+无共同网络的苹果/安卓互相发现仍未实现：AWDL 与 Android Wi-Fi Direct 不是同一协议。Wi-Fi Aware 是另行接入的跨平台候选，需 iOS 26+、受支持的苹果设备（Apple 列出 iPhone 12 及以后等机型）、对应 capability、系统配对，以及安卓硬件/系统实际支持 Wi-Fi Aware。不能仅凭 Android 版本或当前 `includePeerToPeer` 配置承诺互通。先核对实际机型，再做双方发布、订阅、配对和链路原型；本轮没有启用未验证的 entitlement 或冒充完成该功能。
+
+参考：[Apple Wi-Fi Aware](https://developer.apple.com/documentation/WiFiAware)、[Android Wi-Fi Aware](https://developer.android.com/develop/connectivity/wifi/wifi-aware)。
 
 ## 4. 锁屏对讲、后台重连与耳机并发
 
