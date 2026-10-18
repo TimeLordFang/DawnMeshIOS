@@ -16,3 +16,4 @@ xcuserdata/
 *.p12
 *.mobileprovision
 native/build/
+artifacts/

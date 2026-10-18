@@ -1,21 +1,35 @@
 import Foundation
 import Network
 
-// Preserve the existing TCP protocol and PAKE. Only the network path changes:
-// Bonjour service endpoints retain the IPv6 interface scope required by AWDL.
+// Each discovery owner has its own browser/listener. Endpoint proxies outlive
+// browsing, so popping a discovery page does not terminate an active room.
 final class DawnApplePeerWiFi {
     static let serviceType = "_dawnmesh._tcp"
-    private var browser: NWBrowser?
-    private var listener: NWListener?
-    private let publicationName = UUID().uuidString
+    private final class Browse {
+        let browser: NWBrowser
+        var endpoints = [NWEndpoint: String]()
+        init(_ browser: NWBrowser) { self.browser = browser }
+    }
+    private final class Publication {
+        let listener: NWListener
+        let port: UInt16
+        let name = UUID().uuidString
+        var pipes = [UUID: DawnPeerPipe]()
+        init(_ listener: NWListener, port: UInt16) { self.listener = listener; self.port = port }
+        func close() {
+            listener.cancel()
+            for pipe in Array(pipes.values) { pipe.close() }
+            pipes.removeAll()
+        }
+    }
+    private var browsers = [String: Browse]()
+    private var publications = [String: Publication]()
     private var retainedEndpoints = [String: NWEndpoint]()
     private var endpoints = [String: NWEndpoint]()
-    private var endpointIDs = [NWEndpoint: String]()
     private var clients = [String: DawnPeerProxy]()
-    private var hostPipes = [UUID: DawnPeerPipe]()
-    var onRoom: (([String: Any]) -> Void)?
-    var onRemoved: ((String) -> Void)?
-    var onError: ((String) -> Void)?
+    var onRoom: ((String, [String: Any]) -> Void)?
+    var onRemoved: ((String, String) -> Void)?
+    var onError: ((String, String) -> Void)?
 
     static func parameters() -> NWParameters {
         let tcp = NWProtocolTCP.Options(); tcp.noDelay = true
@@ -23,59 +37,67 @@ final class DawnApplePeerWiFi {
         parameters.includePeerToPeer = true
         return parameters
     }
-    func startBrowsing() {
-        stopBrowsing()
-        let browser = NWBrowser(for: .bonjourWithTXTRecord(type: Self.serviceType, domain: "local."), using: Self.parameters())
-        self.browser = browser
-        browser.stateUpdateHandler = { [weak self, weak browser] state in
-            guard let self = self, self.browser === browser else { return }
-            if case .failed(let error) = state {
-                for id in Array(self.endpoints.keys) { self.onRemoved?(id) }
-                self.stopBrowsing(); self.onError?("附近 Wi-Fi 发现失败：\(error)")
+    func startBrowsing(id: String = "default", serviceType: String = DawnApplePeerWiFi.serviceType) {
+        stopBrowsing(id: id)
+        let browser = NWBrowser(for: .bonjourWithTXTRecord(type: serviceType, domain: "local."), using: Self.parameters())
+        let state = Browse(browser)
+        browsers[id] = state
+        browser.stateUpdateHandler = { [weak self, weak state] update in
+            guard let self = self, let state = state, self.browsers[id] === state else { return }
+            if case .failed(let error) = update {
+                for endpointID in state.endpoints.values { self.onRemoved?(id, endpointID) }
+                self.stopBrowsing(id: id); self.onError?(id, "附近 Wi-Fi 发现失败：\(error)")
             }
-            if case .waiting(let error) = state { self.onError?("等待本地网络权限或 Wi-Fi 恢复：\(error)") }
+            if case .waiting(let error) = update { self.onError?(id, "等待本地网络权限或 Wi-Fi 恢复：\(error)") }
         }
-        browser.browseResultsChangedHandler = { [weak self, weak browser] results, _ in
-            guard let self = self, self.browser === browser else { return }
+        browser.browseResultsChangedHandler = { [weak self, weak state] results, _ in
+            guard let self = self, let state = state, self.browsers[id] === state else { return }
             let present = Set(results.map(\.endpoint))
-            for (endpoint, id) in self.endpointIDs where !present.contains(endpoint) {
-                self.endpoints.removeValue(forKey: id); self.endpointIDs.removeValue(forKey: endpoint); self.onRemoved?(id)
+            for (endpoint, endpointID) in Array(state.endpoints) where !present.contains(endpoint) {
+                self.endpoints.removeValue(forKey: endpointID)
+                state.endpoints.removeValue(forKey: endpoint)
+                self.onRemoved?(id, endpointID)
             }
             for result in results {
+                if case .service(let name, _, _, _) = result.endpoint,
+                   self.publications.values.contains(where: { $0.name == name }) { continue }
                 guard case .bonjour(let txt) = result.metadata,
                       let roomID = txt["roomId"], !roomID.isEmpty,
                       let name = txt["roomName"], let nickname = txt["hostNickname"],
                       let port = Int(txt["port"] ?? "8988"), (1...65535).contains(port),
-                      self.endpointIDs[result.endpoint] != nil || self.endpoints.count < 64 else { continue }
-                let id = self.endpointIDs[result.endpoint] ?? UUID().uuidString
-                self.endpointIDs[result.endpoint] = id; self.endpoints[id] = result.endpoint
-                self.onRoom?(["service": id, "peerService": id, "roomId": String(roomID.prefix(64)), "roomName": String(name.prefix(64)), "hostNickname": String(nickname.prefix(64)), "port": port, "members": max(0, min(16, Int(txt["members"] ?? "1") ?? 1)), "address": "127.0.0.1", "type": "room"])
+                      state.endpoints[result.endpoint] != nil || state.endpoints.count < 64 else { continue }
+                let endpointID = state.endpoints[result.endpoint] ?? UUID().uuidString
+                state.endpoints[result.endpoint] = endpointID; self.endpoints[endpointID] = result.endpoint
+                self.onRoom?(id, ["service": endpointID, "peerService": endpointID, "roomId": String(roomID.prefix(64)), "roomName": String(name.prefix(64)), "hostNickname": String(nickname.prefix(64)), "port": port, "members": max(0, min(16, Int(txt["members"] ?? "1") ?? 1)), "address": "127.0.0.1", "type": "room"])
             }
         }
         browser.start(queue: .main)
     }
-    func advertise(values: [String: String], port: UInt16) throws {
-        if listener == nil {
-            let listener = try NWListener(using: Self.parameters())
-            self.listener = listener
-            listener.newConnectionHandler = { [weak self, weak listener] connection in
-                guard let self = self, self.listener === listener, self.hostPipes.count < 15 else { connection.cancel(); return }
-                let id = UUID()
-                let local = NWConnection(host: .ipv4(.loopback), port: NWEndpoint.Port(rawValue: port)!, using: Self.parameters())
-                let pipe = DawnPeerPipe(connection, local)
-                self.hostPipes[id] = pipe
-                pipe.onClose = { [weak self] in self?.hostPipes.removeValue(forKey: id) }
-                pipe.start()
-            }
-            listener.stateUpdateHandler = { [weak self, weak listener] state in
-                guard let self = self, self.listener === listener else { return }
-                if case .failed(let error) = state { self.onError?("Wi-Fi 直连监听失败：\(error)"); self.stopAdvertising() }
-            }
-            listener.service = NWListener.Service(name: publicationName, type: Self.serviceType, txtRecord: NWTXTRecord(values))
-            listener.start(queue: .main)
-        } else {
-            listener?.service = NWListener.Service(name: publicationName, type: Self.serviceType, txtRecord: NWTXTRecord(values))
+    func advertise(values: [String: String], port: UInt16, id: String = "default", serviceType: String = DawnApplePeerWiFi.serviceType) throws {
+        if let current = publications[id], current.port == port {
+            current.listener.service = NWListener.Service(name: current.name, type: serviceType, txtRecord: NWTXTRecord(values))
+            return
         }
+        stopAdvertising(id: id)
+        let listener = try NWListener(using: Self.parameters())
+        let publication = Publication(listener, port: port)
+        publications[id] = publication
+        listener.newConnectionHandler = { [weak self, weak publication] connection in
+            guard let self = self, let publication = publication,
+                  self.publications[id] === publication, publication.pipes.count < 15 else { connection.cancel(); return }
+            let pipeID = UUID()
+            let local = NWConnection(host: .ipv4(.loopback), port: NWEndpoint.Port(rawValue: port)!, using: Self.parameters())
+            let pipe = DawnPeerPipe(connection, local)
+            publication.pipes[pipeID] = pipe
+            pipe.onClose = { [weak publication] in publication?.pipes.removeValue(forKey: pipeID) }
+            pipe.start()
+        }
+        listener.stateUpdateHandler = { [weak self, weak publication] update in
+            guard let self = self, let publication = publication, self.publications[id] === publication else { return }
+            if case .failed(let error) = update { self.onError?(id, "Wi-Fi 点对点监听失败：\(error)"); self.stopAdvertising(id: id) }
+        }
+        listener.service = NWListener.Service(name: publication.name, type: serviceType, txtRecord: NWTXTRecord(values))
+        listener.start(queue: .main)
     }
     func open(_ service: String, completion: @escaping ([String: Any]?) -> Void) {
         guard let endpoint = endpoints[service] ?? retainedEndpoints[service], clients.count < 4 else { completion(nil); return }
@@ -88,16 +110,12 @@ final class DawnApplePeerWiFi {
         proxy.start { port in completion(port.map { ["port": Int($0), "connectionId": id] }) }
     }
     func close(_ id: String) { clients.removeValue(forKey: id)?.close() }
-    func stopBrowsing() {
-        browser?.cancel(); browser = nil
-        endpoints.removeAll(); endpointIDs.removeAll()
-        // Active room connections outlive the home-page discovery browser.
+    func stopBrowsing(id: String = "default") {
+        guard let state = browsers.removeValue(forKey: id) else { return }
+        state.browser.cancel()
+        for endpointID in state.endpoints.values { endpoints.removeValue(forKey: endpointID) }
     }
-    func stopAdvertising() {
-        listener?.cancel(); listener = nil
-        for pipe in Array(hostPipes.values) { pipe.close() }
-        hostPipes.removeAll()
-    }
+    func stopAdvertising(id: String = "default") { publications.removeValue(forKey: id)?.close() }
 }
 
 // Exactly one chunk per direction may be in flight. TCP backpressure is
