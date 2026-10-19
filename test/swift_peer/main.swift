@@ -1,6 +1,8 @@
 import Foundation
 import Network
 
+precondition(DawnApplePeerWiFi.parameters().includePeerToPeer, "Apple peer discovery and connections must enable peer-to-peer Wi-Fi")
+
 var failure: String?
 var finished = false
 var echoConnections = [NWConnection]()

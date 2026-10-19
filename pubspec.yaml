@@ -3,8 +3,8 @@ description: "DawnMesh - decentralized voice intercom for iOS; compatible with A
 publish_to: 'none'
 
 # versionName 取 `+` 前半段，versionCode 取后半段。
-# DawnMesh 1.0.6 / build number 7
-version: 1.0.6+7
+# DawnMesh 1.0.8 / build number 9
+version: 1.0.8+9
 
 environment:
   sdk: '>=3.13.0 <4.0.0'
