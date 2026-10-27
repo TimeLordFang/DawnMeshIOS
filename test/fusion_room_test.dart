@@ -75,7 +75,9 @@ Future<void> _joinLocal(_Node guest, _Node neighbor) async {
   expect(
     await guest.link.connectLocal('127.0.0.1', port: neighbor.link.boundPort),
     true,
-    reason: 'Local fusion connection to port ${neighbor.link.boundPort}',
+    reason: 'Local fusion connection to port ${neighbor.link.boundPort}: '
+        '${guest.link.lastConnectionError}; '
+        '${neighbor.session.members.length} admitted members',
   );
   await guest.session.joinRoom(startAudio: false);
   await _until(() => guest.session.state == RoomState.inRoom);

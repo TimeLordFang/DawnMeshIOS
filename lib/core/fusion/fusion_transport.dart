@@ -294,7 +294,9 @@ class FusionTransport extends RoomTransport
       attached = true;
       _connectedTargets[target] = socket;
       return true;
-    } catch (_) {
+    } catch (error) {
+      lastConnectionError = '$error';
+      AppLog.warn('Fusion', 'Local connection unavailable: $error');
       return false;
     } finally {
       if (!attached && proxyID != null) await _closeAppleProxy(proxyID);
