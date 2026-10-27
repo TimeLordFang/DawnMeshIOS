@@ -1,8 +1,8 @@
 # 曙光之声 · DawnMesh iOS
 
-当前 iOS 版本：**1.0.8**。详见 [发布说明](docs/RELEASE_1.0.8.md)。
+当前 iOS 版本：**1.2.0**。详见 [发布说明](docs/RELEASE_1.2.0.md)。
 
-1.0.8 配套 Android 1.1.9，融合房支持苹果点对点 Wi-Fi、同网发现与公网回退，点击房间后连续完成邀请码与连接流程；移除 Nearby 实验集成。
+1.2.0 与 Android 统一为 1.2.0+61，更新图标并加入可靠文字、独立成员身份、退出换钥、GATT 文字备用、可选语音留言、Wi-Fi Aware 加速和离线密封转交。近场房间要求所有成员升级；无线互通和锁屏仍需 [五机验收](docs/MANUAL_ACCEPTANCE.md)。
 
 1.0.6 配套 Android 1.1.7，使用标准 Bonjour/NSD 同网双向发现，不依赖 iOS UDP 广播权限。
 
@@ -26,7 +26,7 @@
 
 ## 与安卓同网互通
 
-推荐 iOS 1.0.8 与 Android 1.1.9 一起升级：
+推荐 iOS 与 Android 一起升级到 1.2.0：
 
 1. 两台设备连接同一 Wi-Fi 或手机热点，允许 iOS 的本地网络权限；Android 17 还需允许本地网络权限。双方保持前台。
 2. **任一端建房 → 另一端加入**：选择 Wi-Fi，点击“看看附近”，在列表选择房间并输入邀请码。两端使用 `_dawnmesh._tcp` / `_dawnfusion._tcp` 标准 DNS-SD 信息；安卓解析 iOS 服务的实际 SRV 端口，不误用 TXT 中的内部端口。融合房使用各自已有的融合房入口。
@@ -36,7 +36,7 @@
 
 标准 Bonjour 不需要额外 multicast entitlement，普通 Apple 账号签名仍可使用。原 UDP 广播路径受 Apple 额外权限约束，不能作为跨平台发现的保证；详见 [iOS 限制说明](docs/IOS_LIMITATIONS.md)。
 
-**无共同网络的 iOS ↔ Android 自动直连尚未实现。** 苹果点对点链路与 Android Wi-Fi Direct 不互通；本次 Bonjour 修复仅解决已在同一 Wi-Fi/热点时的发现。跨平台无路由器可先由一台手机开热点，另一台连接；真正的跨平台发现/直连需要另行接入双方支持的 Wi-Fi Aware 与系统配对。
+**跨平台无线加速需按设备验证。** Apple peer Wi-Fi 与 Android Wi-Fi Direct 仍不互通。1.2.0 为已入房的融合成员增加可选 Wi-Fi Aware 标准配对和加速：需要兼容硬件、系统与 iOS 签名权限；不支持或失败时保留同网/云端路径。首次跨平台离线入房可使用共同热点或蓝牙文字备用；Aware 不代替首次入房认证。
 
 网页客户端当前只支持公网 LiveKit 房；浏览器不直接参加 LAN/L2CAP 或融合 Opus 房。本仓库不改变网页版已有的房型范围。
 

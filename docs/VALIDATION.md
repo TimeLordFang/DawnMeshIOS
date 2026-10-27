@@ -1,5 +1,19 @@
 # 验证记录 · 2026-10-13
 
+## 1.2.0 / 构建 61（2026-10-27）
+
+- Android：346 项 Flutter 回归全部通过；iOS：365 项全部通过。两端均配置本机真实 Go 中继，覆盖认证停滞备用入口、双网关去重、退出换钥和剩余上行，没有跳过该项。
+- 最后针对文字备用设备过滤实时音频/留言占位，补充步骤在 Android 12 项、iOS 6 项专项测试中通过。
+- 两端 Flutter 静态检查无问题。Android 应用 JVM 49 项通过，应用 Lint 通过（3 项工具版本/兼容图标资源告警，无错误）。
+- 共享原生音频 C++ ASan/UBSan 2 项通过；iOS 原生 3 项、Opus/RNNoise 互操作、Pod 补丁幂等、Swift 190 项协议检查、512 KiB 双向 TCP 代理及断链检查通过。
+- Android 签名 APK 与 AAB 均生成，包内版本 1.2.0 / 61。APK v2 签名、ZIP 16 KiB 对齐、ZIP CRC 与全部 64 位 ELF PT_LOAD 至少 16 KiB 对齐通过；AAB 结构经校验过官方 SHA-256 的 bundletool 1.18.3 验证，通过 CRC、ELF 对齐与 JarFile 115 个载荷逐项签名校验。
+- AAB jarsigner 通过并提示自签名证书、无时间戳及 JarInputStream 读取方式告警；不能描述为无警告验证。JDK 27 对部分验证工具另有弃用 API 提示。
+- iOS Release 设备目标编译通过，Info.plist 确认 1.2.0 / 61；新系统框架为弱链接，旧系统使用能力分支。产物未做发行签名，不能直接安装。
+- 新增手动验收开关、五机步骤和明确的不支持回退。没有连接真实手机，射频、配对互通、功耗和锁屏稳定性仍由 [手动验收](MANUAL_ACCEPTANCE.md) 记录，不能从编译/回环推断通过。
+
+此段为本地构建与测试记录。GitHub Actions 会从发布标签重新构建，下载时使用同一 Release 随包提供的校验文件；不同构建不承诺二进制哈希相同。
+
+
 ## 通过
 
 - Flutter/Dart 分析：**No issues found**。

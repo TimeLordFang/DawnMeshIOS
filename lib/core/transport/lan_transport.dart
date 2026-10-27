@@ -244,6 +244,11 @@ class LanTransport implements RoomTransport {
   }
 
   void _onClientConnected(Socket socket) {
+    unawaited(socket.done.then<void>((_) {}, onError: (Object error, StackTrace _) {
+      final label = _clientLabels[socket] ?? 'peer';
+      AppLog.debug(_tag, '成员写入连接已结束：$error');
+      _removeClient(socket, label);
+    }));
     // remoteAddress 在 socket 关闭后会抛异常，先把地址记下来。
     final label = '${socket.remoteAddress.address}:${socket.remotePort}';
 
@@ -371,6 +376,9 @@ class LanTransport implements RoomTransport {
       return false;
     }
     final socket = _hostSocket!;
+    unawaited(socket.done.then<void>((_) {}, onError: (Object error, StackTrace _) {
+      _handleHostDisconnect(socket, generation, 'socket_write_error', error);
+    }));
     socket.setOption(SocketOption.tcpNoDelay, true);
     final accumulator = _FrameAccumulator();
     socket.listen(

@@ -218,32 +218,10 @@ class _AboutPageState extends State<AboutPage> {
                     Center(
                       child: Column(
                         children: [
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                colors: [
-                                  AppTheme.dawnCoral,
-                                  AppTheme.sunWarmYellow,
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.dawnCoral.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                  blurRadius: 16,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.waves,
-                              color: Colors.white,
-                              size: 32,
-                            ),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.asset('assets/branding/dawnmesh-icon.png',
+                              width: 64, height: 64),
                           ),
                           const SizedBox(height: 12),
                           Text(

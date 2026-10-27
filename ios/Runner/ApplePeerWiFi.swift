@@ -171,13 +171,14 @@ final class DawnPeerPipe {
 
 final class DawnPeerProxy {
     private let endpoint: NWEndpoint
+    private let remoteParameters: NWParameters?
     private var listener: NWListener?
     private var pipe: DawnPeerPipe?
     private var completion: ((UInt16?) -> Void)?
     private var timeout: DispatchWorkItem?
     private var closed = false
     var onClose: (() -> Void)?
-    init(endpoint: NWEndpoint) { self.endpoint = endpoint }
+    init(endpoint: NWEndpoint, remoteParameters: NWParameters? = nil) { self.endpoint = endpoint; self.remoteParameters = remoteParameters }
     func start(completion: @escaping (UInt16?) -> Void) {
         self.completion = completion
         do {
@@ -198,7 +199,7 @@ final class DawnPeerProxy {
             listener.newConnectionHandler = { [weak self] connection in
                 guard let self = self, !self.closed, self.pipe == nil else { connection.cancel(); return }
                 self.timeout?.cancel(); self.listener?.stateUpdateHandler = nil; self.listener?.cancel(); self.listener = nil
-                let remote = NWConnection(to: self.endpoint, using: DawnApplePeerWiFi.parameters())
+                let remote = NWConnection(to: self.endpoint, using: self.remoteParameters ?? DawnApplePeerWiFi.parameters())
                 let pipe = DawnPeerPipe(connection, remote)
                 self.pipe = pipe
                 pipe.onClose = { [weak self] in self?.close() }

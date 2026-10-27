@@ -6,6 +6,20 @@ import CoreBluetooth
 public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDelegate, CBPeripheralDelegate, CBPeripheralManagerDelegate, StreamDelegate {
     private static let service = CBUUID(string: "7f75d4e0-7a46-4d74-9f8d-1e4bc5e4b004")
     private static let metadata = CBUUID(string: "7f75d4e1-7a46-4d74-9f8d-1e4bc5e4b004")
+    private static let dataPipe = CBUUID(string: "7f75d4e2-7a46-4d74-9f8d-1e4bc5e4b004")
+    private var gattMode = false
+    private var gattData: CBCharacteristic?
+    private var hostedData: CBMutableCharacteristic?
+    private var gattPeers = [String: GattLink]()
+    private var gattClient = GattLink()
+    private var gattWriting = false
+    private var gattWatchdog: Timer?
+    private final class GattLink {
+        var reader = DawnFrameReader()
+        var writer = DawnWriteQueue(capacity: 64)
+        var central: CBCentral?
+        var progress = ProcessInfo.processInfo.systemUptime
+    }
     private lazy var central = CBCentralManager(delegate: self, queue: .main)
     private lazy var peripheralManager = CBPeripheralManager(delegate: self, queue: .main)
     private var peripherals = [String: CBPeripheral]()
@@ -92,10 +106,22 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
             if peripheral.state == .connected { peripheral.openL2CAPChannel(CBL2CAPPSM(psm)) }
             else if !awaitingMetadataDisconnect { central.connect(peripheral) }
             connectTimer = Timer.scheduledTimer(withTimeInterval: 12, repeats: false) { [weak self] _ in self?.disconnectClient(notify: true) }
+        case "connectGatt":
+            guard !hosting, central.state == .poweredOn, let address = args["address"] as? String,
+                  let peripheral = peripherals[address] else { result(false); return }
+            disconnectClient(notify: false)
+            gattMode = true; peer = peripheral; connectResult = result
+            metadataReads.removeValue(forKey: address)
+            metadataTimers.removeValue(forKey: address)?.invalidate()
+            peripheral.delegate = self
+            awaitingMetadataDisconnect = peripheral.state == .disconnecting
+            if peripheral.state == .connected { peripheral.discoverServices([Self.service]) }
+            else if !awaitingMetadataDisconnect { central.connect(peripheral) }
+            connectTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { [weak self] _ in self?.disconnectClient(notify: true) }
         case "sendL2capData":
             guard let bytes = args["data"] as? FlutterStandardTypedData else { result(false); return }
-            result(send(bytes.data, realtime: args["realtime"] as? Bool ?? false, excluding: args["excludeAddress"] as? String))
-        case "flush": for id in Array(links.keys) { drain(id) }; result(nil)
+            result(send(bytes.data, realtime: args["realtime"] as? Bool ?? false, excluding: args["excludeAddress"] as? String, bulk: args["bulk"] as? Bool ?? false))
+        case "flush": for id in Array(links.keys) { drain(id) }; flushGatt(result)
         case "stop": stop(); result(nil)
         default: result(FlutterMethodNotImplemented)
         }
@@ -114,6 +140,7 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
         if peripheral.state == .poweredOn { if hosting { publish() } }
         else if peripheral.state != .unknown && peripheral.state != .resetting {
             publishing = false; hostPSM = 0
+            gattPeers.removeAll(); hostedData = nil
             for id in Array(links.keys) { closeLink(id) }
             if hostResult != nil { failHost("蓝牙不可用，请检查开关和权限。") }
             // An established host stays armed and republishes after radio recovery.
@@ -125,7 +152,9 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
         guard error == nil, (1...255).contains(Int(PSM)) else { failHost("无法创建蓝牙 L2CAP 通道。请重试。"); return }
         hostPSM = PSM
         let service = CBMutableService(type: Self.service, primary: true)
-        service.characteristics = [CBMutableCharacteristic(type: Self.metadata, properties: [.read], value: nil, permissions: [.readable])]
+        let data = CBMutableCharacteristic(type: Self.dataPipe, properties: [.write, .indicate], value: nil, permissions: [.writeable])
+        hostedData = data
+        service.characteristics = [CBMutableCharacteristic(type: Self.metadata, properties: [.read], value: nil, permissions: [.readable]), data]
         peripheral.removeAllServices(); peripheral.add(service)
     }
     public func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
@@ -207,21 +236,35 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
         if peer !== peripheral { central.cancelPeripheralConnection(peripheral) }
     }
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        if peer === peripheral, let psm = targetPSM { peripheral.openL2CAPChannel(psm) }
+        if peer === peripheral, gattMode { peripheral.discoverServices([Self.service]) }
+        else if peer === peripheral, let psm = targetPSM { peripheral.openL2CAPChannel(psm) }
         else if metadataReads[peripheral.identifier.uuidString] != nil { peripheral.discoverServices([Self.service]) }
         else { central.cancelPeripheralConnection(peripheral) }
     }
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        if peer === peripheral, gattMode {
+            guard error == nil, let service = peripheral.services?.first(where: { $0.uuid == Self.service }) else { disconnectClient(notify: true); return }
+            peripheral.discoverCharacteristics([Self.dataPipe], for: service); return
+        }
         guard metadataReads[peripheral.identifier.uuidString] != nil else { return }
         guard error == nil, let service = peripheral.services?.first(where: { $0.uuid == Self.service }) else { finishMetadata(peripheral); return }
         peripheral.discoverCharacteristics([Self.metadata], for: service)
     }
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        if peer === peripheral, gattMode {
+            guard error == nil, let characteristic = service.characteristics?.first(where: { $0.uuid == Self.dataPipe }),
+                  characteristic.properties.contains(.write), characteristic.properties.contains(.indicate) else { disconnectClient(notify: true); return }
+            gattData = characteristic; peripheral.setNotifyValue(true, for: characteristic); return
+        }
         guard metadataReads[peripheral.identifier.uuidString] != nil else { return }
         guard error == nil, let characteristic = service.characteristics?.first(where: { $0.uuid == Self.metadata }) else { finishMetadata(peripheral); return }
         peripheral.readValue(for: characteristic)
     }
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        if peer === peripheral, gattMode, characteristic.uuid == Self.dataPipe {
+            guard error == nil, let data = characteristic.value else { disconnectClient(notify: true); return }
+            receiveGatt(data, id: peripheral.identifier.uuidString, link: gattClient); return
+        }
         guard metadataReads[peripheral.identifier.uuidString] != nil, characteristic.uuid == Self.metadata else { return }
         if error == nil, let data = characteristic.value, let room = DawnBleMetadata.parse(data) { report(peripheral.identifier.uuidString, room: room, now: ProcessInfo.processInfo.systemUptime, complete: true) }
         finishMetadata(peripheral)
@@ -254,8 +297,8 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
             for (id, link) in Array(self.links) where !link.writer.isEmpty && ProcessInfo.processInfo.systemUptime - link.lastProgress > 5 { self.closeLink(id, notify: true) }
         } }
     }
-    private func send(_ bytes: Data, realtime: Bool, excluding: String?) -> Bool {
-        var sent = false
+    private func send(_ bytes: Data, realtime: Bool, excluding: String?, bulk: Bool = false) -> Bool {
+        var sent = !realtime && !bulk && sendGatt(bytes, excluding: excluding)
         for (id, link) in Array(links) where id != excluding {
             let now = ProcessInfo.processInfo.systemUptime
             if link.writer.isEmpty { link.lastProgress = now }
@@ -309,12 +352,128 @@ public final class BleL2capPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
     private func disconnectClient(notify: Bool) {
         connectTimer?.invalidate(); connectTimer = nil
         let previous = peer; peer = nil; targetPSM = nil; awaitingMetadataDisconnect = false
+        gattMode = false; gattData = nil; gattWriting = false; gattClient = GattLink()
         if let previous = previous { closeLink(previous.identifier.uuidString); central.cancelPeripheralConnection(previous) }
         let completion = connectResult; connectResult = nil; completion?(false)
         if notify && previous != nil { dataEvents.sink?(["type": "disconnected", "reason": "ios_l2cap_closed"]) }
     }
+    public func peripheralManager(_ manager: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
+        guard hosting, characteristic.uuid == Self.dataPipe, gattPeers.count < 5 else { return }
+        let id = central.identifier.uuidString
+        if gattPeers[id] == nil { let link = GattLink(); link.central = central; gattPeers[id] = link }
+        startGattWatchdog()
+    }
+    public func peripheralManager(_ manager: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
+        if characteristic.uuid == Self.dataPipe { gattPeers.removeValue(forKey: central.identifier.uuidString) }
+    }
+    public func peripheralManager(_ manager: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        guard let first = requests.first else { return }
+        // Prepared writes are not part of this streaming protocol.
+        for request in requests {
+            guard request.characteristic.uuid == Self.dataPipe, request.offset == 0,
+                  let bytes = request.value, !bytes.isEmpty, bytes.count <= 512,
+                  let link = gattPeers[request.central.identifier.uuidString] else {
+                manager.respond(to: first, withResult: .requestNotSupported); return
+            }
+            guard receiveGatt(bytes, id: request.central.identifier.uuidString, link: link) else {
+                manager.respond(to: first, withResult: .invalidAttributeValueLength); return
+            }
+        }
+        manager.respond(to: first, withResult: .success)
+    }
+    @discardableResult private func receiveGatt(_ bytes: Data, id: String, link: GattLink) -> Bool {
+        do {
+            guard !bytes.isEmpty, bytes.count <= 512 else { return false }
+            for frame in try link.reader.append(bytes) {
+                guard [9, 10, 11].contains(frame[0]) else { throw NSError(domain: "DawnGatt", code: 1) }
+                if hosting && frame[0] != 11 { _ = send(frame, realtime: false, excluding: "gatt:" + id) }
+                dataEvents.sink?(["type": "data", "data": FlutterStandardTypedData(bytes: frame), "peerAddress": "gatt:" + id])
+            }
+            return true
+        } catch {
+            if hosting { gattPeers.removeValue(forKey: id) } else { disconnectClient(notify: true) }
+            return false
+        }
+    }
+    public func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
+        guard peer === peripheral, gattMode, characteristic.uuid == Self.dataPipe else { return }
+        guard error == nil, characteristic.isNotifying else { disconnectClient(notify: true); return }
+        connectTimer?.invalidate(); connectTimer = nil
+        let completion = connectResult; connectResult = nil; completion?(true)
+        startGattWatchdog()
+    }
+    public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        guard peer === peripheral, gattMode, characteristic.uuid == Self.dataPipe else { return }
+        guard error == nil else { disconnectClient(notify: true); return }
+        gattWriting = false; gattClient.progress = ProcessInfo.processInfo.systemUptime; drainGattClient()
+    }
+    public func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
+        for id in Array(gattPeers.keys) { drainGattHost(id) }
+    }
+    private func sendGatt(_ bytes: Data, excluding: String?) -> Bool {
+        guard bytes.count >= 6, bytes.count <= 518, [9, 10, 11].contains(bytes[0]) else { return false }
+        let now = ProcessInfo.processInfo.systemUptime
+        if hosting {
+            var sent = false
+            for (id, link) in Array(gattPeers) where "gatt:" + id != excluding {
+                if link.writer.isEmpty { link.progress = now }
+                if link.writer.append(bytes, realtime: false, now: now) { drainGattHost(id); sent = true }
+                else { gattPeers.removeValue(forKey: id) }
+            }
+            return sent
+        }
+        guard gattMode, peer != nil, gattData != nil else { return false }
+        if gattClient.writer.isEmpty && !gattWriting { gattClient.progress = now }
+        guard gattClient.writer.append(bytes, realtime: false, now: now) else { disconnectClient(notify: true); return false }
+        drainGattClient(); return true
+    }
+    private func drainGattClient() {
+        guard !gattWriting, gattMode, let peripheral = peer, let characteristic = gattData else { return }
+        do {
+            try gattClient.writer.drain(now: ProcessInfo.processInfo.systemUptime, maxAge: 0) { bytes in
+                guard !self.gattWriting else { return 0 }
+                let chunk = Data(bytes.prefix(min(512, peripheral.maximumWriteValueLength(for: .withResponse))))
+                self.gattWriting = true; peripheral.writeValue(chunk, for: characteristic, type: .withResponse)
+                return chunk.count
+            }
+        } catch { disconnectClient(notify: true) }
+    }
+    private func drainGattHost(_ id: String) {
+        guard let link = gattPeers[id], let central = link.central, let characteristic = hostedData else { return }
+        do {
+            while !link.writer.isEmpty {
+                var progressed = false
+                try link.writer.drain(now: ProcessInfo.processInfo.systemUptime, maxAge: 0) { bytes in
+                    let chunk = Data(bytes.prefix(min(512, central.maximumUpdateValueLength)))
+                    guard self.peripheralManager.updateValue(chunk, for: characteristic, onSubscribedCentrals: [central]) else { return 0 }
+                    progressed = true; link.progress = ProcessInfo.processInfo.systemUptime
+                    return chunk.count
+                }
+                if !progressed { break }
+            }
+        } catch { gattPeers.removeValue(forKey: id) }
+    }
+    private func startGattWatchdog() {
+        guard gattWatchdog == nil else { return }
+        gattWatchdog = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            let now = ProcessInfo.processInfo.systemUptime
+            for (id, link) in Array(self.gattPeers) where !link.writer.isEmpty && now - link.progress > 8 { self.gattPeers.removeValue(forKey: id) }
+            if self.gattMode && (!self.gattClient.writer.isEmpty || self.gattWriting) && now - self.gattClient.progress > 8 { self.disconnectClient(notify: true) }
+        }
+    }
+    private func flushGatt(_ result: @escaping FlutterResult) {
+        func empty() -> Bool { gattPeers.values.allSatisfy { $0.writer.isEmpty } && gattClient.writer.isEmpty && !gattWriting }
+        if empty() { result(nil); return }
+        let deadline = ProcessInfo.processInfo.systemUptime + 6
+        Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { timer in
+            if empty() { timer.invalidate(); result(nil) }
+            else if ProcessInfo.processInfo.systemUptime > deadline { timer.invalidate(); result(FlutterError(code: "FLUSH_TIMEOUT", message: "蓝牙文字队列尚未发送完成", details: nil)) }
+        }
+    }
     private func stop() {
         hosting = false; publishing = false
+        gattWatchdog?.invalidate(); gattWatchdog = nil; gattPeers.removeAll(); hostedData = nil
         hostTimer?.invalidate(); hostTimer = nil
         let completion = hostResult; hostResult = nil; completion?(false)
         peripheralManager.stopAdvertising()

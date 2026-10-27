@@ -3,6 +3,49 @@ import 'package:flutter/material.dart';
 /// App-wide typed bilingual strings.
 class AppStrings {
   final bool isEn;
+  String get textOnlyStatus =>
+      !isEn ? '蓝牙备用连接 · 仅文字' : 'Bluetooth fallback · text only';
+  String get textOnlyHint => !isEn
+      ? '当前连接支持文字聊天。重新连接后将再次尝试语音通道。'
+      : 'Text chat is available. Reconnect to retry the voice link.';
+  String get textOnlyLabel => !isEn ? '仅文字' : 'Text only';
+
+  String get memberSafetyNumbers => isEn ? 'Member safety numbers' : '成员安全号码';
+  String get safetyNumberHint => isEn
+      ? 'Compare the full number for the same member on both phones in person or through a trusted channel. Nicknames and short device codes do not verify identity. Reinstalling or clearing secure storage may change this number.'
+      : '面对面或通过可信渠道，核对双方手机上同一成员的完整号码。昵称和三位编号不能验证身份；重装或清除安全存储后号码可能变化。';
+  String get measurementUnavailable => isEn ? 'Not measured' : '尚未测量';
+  String get transportQueued => isEn ? 'Queued packets' : '等待发送的数据包';
+  String get transportHighWater =>
+      isEn ? 'Largest queue on one link' : '单条链路队列峰值';
+  String get transportDroppedAudio =>
+      isEn ? 'Expired or congested audio packets' : '过期或拥塞丢弃的语音包';
+  String get transportSentBytes =>
+      isEn ? 'Sent bytes (all links)' : '累计发送字节（所有链路）';
+  String get transportLinks => isEn ? 'Active links' : '当前链路数';
+
+  String get retainVoiceNotes =>
+      isEn ? 'Keep my PTT as voice notes' : '将我的按键通话保留为留言';
+  String get retainVoiceNotesHint => isEn
+      ? 'Off by default. Up to 15 seconds per press, kept in this room only. Live speech continues beyond the limit. Notes can be recalled.'
+      : '默认关闭。每次按键最多保留 15 秒，仅在本房间暂存；超出仍可继续通话。已留存的留言可撤回。';
+  String get playVoiceNote => isEn ? 'Play voice note' : '播放语音留言';
+  String get stopVoiceNote => isEn ? 'Stop playback' : '停止播放';
+  String get cancelVoiceNote => isEn ? 'Discard this note' : '取消本次留言';
+  String get voiceNotePending =>
+      isEn ? 'Voice note · waiting for completion' : '语音留言 · 等待补全';
+  String voiceNoteDuration(String seconds) =>
+      isEn ? 'Voice note · $seconds s' : '语音留言 · $seconds 秒';
+  String get voiceNotePlaybackFailed => isEn
+      ? 'Release PTT or mute before playback. If it still fails, the note cannot be played.'
+      : '请先松开对讲或静音再播放；若仍失败，该留言暂时无法播放。';
+
+  String chatDeliveryLabel(String state) => switch (state) {
+    'pending' => isEn ? 'Sent · awaiting confirmation' : '已发送 · 等待确认',
+    'delivered' => isEn ? 'Confirmed by recipients' : '收件成员已确认',
+    'failed' => isEn ? 'Delivery unconfirmed' : '尚未确认送达',
+    _ => isEn ? 'Sent' : '已发送',
+  };
 
   const AppStrings({this.isEn = false});
 
@@ -218,16 +261,16 @@ class AppStrings {
       : '这次没查到更新，稍后再试一次';
   String get changelogTitle => isEn ? 'Recent changes' : '最近的变化';
   String get changelogBody => isEn
-      ? '1.0.8\nKeeps fusion entry in one flow, with same-network Android/iOS discovery, native same-platform peer Wi-Fi and server fallback. Removes experimental Nearby pairing and prototypes. Cross-platform offline peer networking is deferred.\n\n1.0.6\nAdds standard Bonjour/NSD discovery between Android and iOS on shared Wi-Fi or a hotspot, including real service ports and discovery recovery. Apple peer Wi-Fi and Android Wi-Fi Direct remain separate transports.\n\n1.0.5\nHandles asynchronous UDP discovery errors on restricted networks, preserving rooms and ongoing discovery. Adds regression coverage for route failure and improves cloud test diagnostics.\n\n1.0.4\nAdds interactive edge-back animations and cancellation across pages, room stages and sheets while retaining active calls. Fixes room creation after confirming an invite and completes Android Bluetooth room names. Pair with Android 1.1.5.\n\n1.0.3\nAdds Apple peer-to-peer Wi-Fi rooms and iOS Bluetooth hosting with GATT discovery, compatible with Android 1.1.4. Unifies app icons and adds the local Xcode preparation script. Device radio and lock-screen acceptance tests remain required.\n\n1.0.2\nUpdates audio APIs and native C compatibility, fixes checked integer conversions and callback ownership in iOS dependencies, and makes CocoaPods builds reproducible.\n\n1.0.1\nPreserves replay protection across reconnects, refreshes the Bluetooth discovery cache while protecting reconnect targets, adds accessible push-to-talk controls and localizes permission descriptions.\n\n1.0.0\nFirst independent iOS version, matching Android intercom features and compatible with Android and Web. Includes Internet rooms, encrypted messaging, LAN and fusion rooms, joining Android Bluetooth rooms, Opus audio and RNNoise enhancement. iOS Bluetooth hosting and Android Wi-Fi Direct remain unavailable.'
-      : '1.0.8\n融合房一次点击即可输入邀请码并继续连接；保留安卓与 iOS 同网互通、同系统原生 Wi-Fi 直连及公网兜底，补齐本地认证停滞时的备用入口。移除 Nearby 实验配对和原型，跨系统无共同网络直连暂缓。\n\n1.0.6\n补齐安卓与 iOS 同一 Wi-Fi/热点下的 Bonjour/NSD 双向发现，采用实际服务端口并完善发现恢复。苹果点对点 Wi-Fi 与安卓 Wi-Fi Direct 仍为不同链路。\n\n1.0.5\n修复受限网络中 UDP 发现的异步错误，保留房间和发现监听；补齐无路由回归测试，并完善云端失败诊断。\n\n1.0.4\n补齐页面、房间舞台与弹层的侧滑跟手、返回和取消回弹动画，保留通话；修复确认邀请码后无法建房，补全安卓蓝牙房名称。配套安卓 1.1.5。\n\n1.0.3\n新增苹果设备 Wi-Fi 直连房与基于 GATT 发现的 iOS 蓝牙建房，配套安卓 1.1.4；统一图标并新增本地 Xcode 准备脚本。无线连接与锁屏行为仍需真机验收。\n\n1.0.2\n更新音频 API 和原生 C 声明，修复依赖的整数转换与回调引用问题，规范 CocoaPods 配置并锁定原生依赖。\n\n1.0.1\n重连保留防重放状态，蓝牙扫描缓存及时淘汰并保护重连目标，新增无障碍对讲操作及中英文权限说明。\n\n1.0.0\n首个独立 iOS 版本，对标安卓版功能并兼容 Android 和网页。包含公网房、加密消息、局域网与融合房、加入安卓蓝牙房、Opus 语音和 RNNoise 降噪。iOS 蓝牙建房与 Android Wi-Fi Direct 暂不可用。';
+      ? '1.2.0\nUnifies icons and versions. Adds reliable text repair, independent member signatures and rekeying, Bluetooth text fallback, optional voice notes, optional Wi-Fi Aware acceleration and opt-in sealed offline forwarding. All nearby-room members must upgrade; radio interoperability and lock-screen behavior require device acceptance.\n\n1.0.8\nKeeps fusion entry in one flow, with same-network Android/iOS discovery, native same-platform peer Wi-Fi and server fallback. Removes experimental Nearby pairing and prototypes. Cross-platform offline peer networking is deferred.\n\n1.0.6\nAdds standard Bonjour/NSD discovery between Android and iOS on shared Wi-Fi or a hotspot, including real service ports and discovery recovery. Apple peer Wi-Fi and Android Wi-Fi Direct remain separate transports.\n\n1.0.5\nHandles asynchronous UDP discovery errors on restricted networks, preserving rooms and ongoing discovery. Adds regression coverage for route failure and improves cloud test diagnostics.\n\n1.0.4\nAdds interactive edge-back animations and cancellation across pages, room stages and sheets while retaining active calls. Fixes room creation after confirming an invite and completes Android Bluetooth room names. Pair with Android 1.1.5.\n\n1.0.3\nAdds Apple peer-to-peer Wi-Fi rooms and iOS Bluetooth hosting with GATT discovery, compatible with Android 1.1.4. Unifies app icons and adds the local Xcode preparation script. Device radio and lock-screen acceptance tests remain required.\n\n1.0.2\nUpdates audio APIs and native C compatibility, fixes checked integer conversions and callback ownership in iOS dependencies, and makes CocoaPods builds reproducible.\n\n1.0.1\nPreserves replay protection across reconnects, refreshes the Bluetooth discovery cache while protecting reconnect targets, adds accessible push-to-talk controls and localizes permission descriptions.\n\n1.0.0\nFirst independent iOS version, matching Android intercom features and compatible with Android and Web. Includes Internet rooms, encrypted messaging, LAN and fusion rooms, joining Android Bluetooth rooms, Opus audio and RNNoise enhancement. iOS Bluetooth hosting and Android Wi-Fi Direct remain unavailable.'
+      : '1.2.0\n统一两端图标与版本。新增文字确认补齐、成员独立签名和退出换钥、蓝牙文字备用通道、可选语音留言、可选 Wi-Fi Aware 加速与默认关闭的离线密封转交。近场房间要求所有成员升级；无线互通与锁屏表现仍需按设备验收。\n\n1.0.8\n融合房一次点击即可输入邀请码并继续连接；保留安卓与 iOS 同网互通、同系统原生 Wi-Fi 直连及公网兜底，补齐本地认证停滞时的备用入口。移除 Nearby 实验配对和原型，跨系统无共同网络直连暂缓。\n\n1.0.6\n补齐安卓与 iOS 同一 Wi-Fi/热点下的 Bonjour/NSD 双向发现，采用实际服务端口并完善发现恢复。苹果点对点 Wi-Fi 与安卓 Wi-Fi Direct 仍为不同链路。\n\n1.0.5\n修复受限网络中 UDP 发现的异步错误，保留房间和发现监听；补齐无路由回归测试，并完善云端失败诊断。\n\n1.0.4\n补齐页面、房间舞台与弹层的侧滑跟手、返回和取消回弹动画，保留通话；修复确认邀请码后无法建房，补全安卓蓝牙房名称。配套安卓 1.1.5。\n\n1.0.3\n新增苹果设备 Wi-Fi 直连房与基于 GATT 发现的 iOS 蓝牙建房，配套安卓 1.1.4；统一图标并新增本地 Xcode 准备脚本。无线连接与锁屏行为仍需真机验收。\n\n1.0.2\n更新音频 API 和原生 C 声明，修复依赖的整数转换与回调引用问题，规范 CocoaPods 配置并锁定原生依赖。\n\n1.0.1\n重连保留防重放状态，蓝牙扫描缓存及时淘汰并保护重连目标，新增无障碍对讲操作及中英文权限说明。\n\n1.0.0\n首个独立 iOS 版本，对标安卓版功能并兼容 Android 和网页。包含公网房、加密消息、局域网与融合房、加入安卓蓝牙房、Opus 语音和 RNNoise 降噪。iOS 蓝牙建房与 Android Wi-Fi Direct 暂不可用。';
   String get licenseTitle => isEn ? 'Open source license' : '开源许可';
   String get licenseBody => isEn
       ? 'Apache License 2.0\nDawnMesh is based on its original upstream project, under Apache License 2.0.\nhttps://www.apache.org/licenses/LICENSE-2.0'
       : 'Apache License 2.0\n曙光之声基于原始上游项目开发，采用 Apache License 2.0 开源许可证。\nhttps://www.apache.org/licenses/LICENSE-2.0';
   String get privacyTitle => isEn ? 'Messages & privacy' : '关于消息与隐私';
   String get privacyBody => isEn
-      ? 'Voice and text travel between devices in the chat over local Wi-Fi or Bluetooth.\nMessages are kept only in memory. Leaving clears the chat history on your device; other members may still have messages from this chat.\nChecking for updates connects to GitHub.'
-      : '声音和文字通过本地 Wi-Fi 或蓝牙，在参与聊天的设备之间传递。\n文字消息只放在内存里。离开后，你这台设备上的聊天记录会清除，其他成员那里仍可能留有本次聊天的消息。\n检查更新时，会连接 GitHub。';
+      ? 'Room voice and messages use nearby devices or your selected server, depending on the room. Ordinary room chat and opt-in PTT voice notes are held in memory and cleared when you leave.\nOffline forwarding is separate and off by default. Enabling it saves encrypted messages and contacts on your device for up to 24 hours; messages are encrypted for the recipient, while carriers can see routing identities and expiry. Turning it off stops exchange; Clear deletes local data. Recall cannot erase already-read content or uncooperative copies.\nPersistent identity keys use device secure storage. Checking for updates connects to GitHub.'
+      : '房间语音和消息按房型通过附近设备或你选择的服务器传输。普通聊天和主动保留的按键语音留言暂存在内存，离开房间后清除。\n离线转交是独立功能，默认关闭。开启后在本机保存加密消息与联系人，消息最长保留 24 小时；正文密封给收件人，转交者可见路由身份和到期时间。关闭会停止交换；“清空”另行删除本机数据。撤回无法抹去已读内容或不合作的副本。\n持久身份密钥保存在设备安全存储。检查更新时连接 GitHub。';
 
   // Theme
   String themeDescription(String current) =>

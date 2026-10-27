@@ -9,7 +9,7 @@ struct DawnFrameReader {
         var offset = 0
         while buffer.count - offset >= 6 {
             let length = Int(buffer[offset + 4]) << 8 | Int(buffer[offset + 5])
-            guard length <= 512, (1...19).contains(buffer[offset]) else {
+            guard length <= 512, (1...21).contains(buffer[offset]) else {
                 buffer.removeAll()
                 throw NSError(domain: "DawnFrame", code: 1)
             }
@@ -59,10 +59,12 @@ struct DawnBleRoomRecord {
 struct DawnWriteQueue {
     private struct Item { var bytes: Data; var offset = 0; let realtime: Bool; let created: TimeInterval }
     private var items = [Item]()
+    private let capacity: Int
+    init(capacity: Int = 256) { self.capacity = capacity }
     var isEmpty: Bool { items.isEmpty }
     var count: Int { items.count }
     mutating func append(_ data: Data, realtime: Bool, now: TimeInterval) -> Bool {
-        guard items.count < 256 else { return false }
+        guard items.count < capacity else { return false }
         items.append(Item(bytes: data, realtime: realtime, created: now))
         return true
     }

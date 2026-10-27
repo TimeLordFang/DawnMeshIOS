@@ -3,7 +3,14 @@ import UIKit
 import AVFoundation
 import AudioToolbox
 
-public final class PlatformAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
+public final class PlatformAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, AVAudioPlayerDelegate {
+
+    private var notePlayer: AVAudioPlayer?
+    private var noteCompletion: FlutterResult?
+    private var noteGeneration = 0
+    private var noteDecoding = false
+    private var pendingNoteDecode: (Data, Int)?
+    private let noteDecodeQueue = DispatchQueue(label: "dev.dawnmesh.voice-note", qos: .userInitiated)
 
     private static let methodChannelName = "dev.dawnmesh.intercom/audio"
     private static let eventChannelName = "dev.dawnmesh.intercom/audio_events"
@@ -52,7 +59,7 @@ public final class PlatformAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHa
         observers.append(NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] notification in
             guard let self = self, let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
                   let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
-            if type == .began { self.stopAudioEngine() }
+            if type == .began { self.stopVoiceNote(); self.stopAudioEngine() }
             else if self.wantsCapture {
                 let options = AVAudioSession.InterruptionOptions(rawValue: notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0)
                 if options.contains(.shouldResume) { self.resumeAudio() }
@@ -185,6 +192,12 @@ public final class PlatformAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHa
             }
             result(nil)
 
+        case "playVoiceNote":
+            guard let args = call.arguments as? [String: Any], let data = args["data"] as? FlutterStandardTypedData else {
+                result(FlutterError(code: "BAD_ARGS", message: "缺少留言内容", details: nil)); return
+            }
+            playVoiceNote(data.data, result: result)
+        case "stopVoiceNote": stopVoiceNote(); result(nil)
         case "submitRemoteFrame":
             if let args = call.arguments as? [String: Any],
                let typedData = args["data"] as? FlutterStandardTypedData {
@@ -266,6 +279,85 @@ public final class PlatformAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHa
     }
 
     // MARK: - VoiceProcessingIO 音频引擎
+
+    private func playVoiceNote(_ bytes: Data, result: @escaping FlutterResult) {
+        stopVoiceNote()
+        guard bytes.count >= 3, bytes.count <= 96 * 1024 else {
+            result(FlutterError(code: "NOTE_PLAYBACK_FAILED", message: "留言大小无效", details: nil)); return
+        }
+        noteCompletion = result
+        pendingNoteDecode = (bytes, noteGeneration)
+        drainNoteDecode()
+    }
+    // Main-thread queue ownership: one active decode and one replaceable request.
+    private func drainNoteDecode() {
+        guard !noteDecoding, let (bytes, generation) = pendingNoteDecode else { return }
+        pendingNoteDecode = nil; noteDecoding = true
+        noteDecodeQueue.async { [weak self] in
+            let decoded = Result { try Self.decodeVoiceNote(bytes) }
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.noteDecoding = false
+                defer { self.drainNoteDecode() }
+                guard self.noteGeneration == generation else { return }
+                do {
+                    let wav = try decoded.get()
+                    if !self.isCapturing && !self.internetAudio {
+                        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+                        try AVAudioSession.sharedInstance().setActive(true)
+                    }
+                    let player = try AVAudioPlayer(data: wav)
+                    player.delegate = self; self.notePlayer = player
+                    guard player.play() else { throw NSError(domain: "DawnVoiceNote", code: 2) }
+                } catch { self.failVoiceNote() }
+            }
+        }
+    }
+    private func failVoiceNote() {
+        let done = noteCompletion; noteCompletion = nil; stopVoiceNote()
+        done?(FlutterError(code: "NOTE_PLAYBACK_FAILED", message: "语音留言无法播放", details: nil))
+    }
+    private func stopVoiceNote(completed: Bool = false) {
+        noteGeneration += 1
+        pendingNoteDecode = nil
+        notePlayer?.stop(); notePlayer = nil
+        let done = noteCompletion; noteCompletion = nil; done?(completed)
+    }
+    public func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        if notePlayer === player { stopVoiceNote(completed: flag) }
+    }
+    public func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        if notePlayer === player { failVoiceNote() }
+    }
+    private static func decodeVoiceNote(_ bytes: Data) throws -> Data {
+        func invalid() -> NSError { NSError(domain: "DawnVoiceNote", code: 1) }
+        guard bytes.count >= 3, bytes.count <= 96 * 1024, bytes[0] == 1 else { throw invalid() }
+        let count = Int(bytes[1]) << 8 | Int(bytes[2])
+        guard (1...750).contains(count), let decoder = dm_decoder_create() else { throw invalid() }
+        defer { dm_decoder_free(decoder) }
+        var offset = 3; var pcm = Data(); var samples = [Int16](repeating: 0, count: 320)
+        for _ in 0..<count {
+            guard offset + 2 <= bytes.count else { throw invalid() }
+            let size = Int(bytes[offset]) << 8 | Int(bytes[offset + 1]); offset += 2
+            guard (1...512).contains(size), offset + size <= bytes.count else { throw invalid() }
+            let packet = bytes.subdata(in: offset..<(offset + size)); offset += size
+            let decoded = packet.withUnsafeBytes { raw in
+                samples.withUnsafeMutableBufferPointer { out in
+                    dm_decode(decoder, raw.bindMemory(to: UInt8.self).baseAddress, Int32(size), out.baseAddress, 320)
+                }
+            }
+            guard decoded == 320 else { throw invalid() }
+            for sample in samples { let value = UInt16(bitPattern: sample); pcm.append(UInt8(value & 255)); pcm.append(UInt8(value >> 8)) }
+        }
+        guard offset == bytes.count else { throw invalid() }
+        var wav = Data("RIFF".utf8)
+        func u32(_ n: Int) { for shift in stride(from: 0, to: 32, by: 8) { wav.append(UInt8((n >> shift) & 255)) } }
+        func u16(_ n: Int) { wav.append(UInt8(n & 255)); wav.append(UInt8((n >> 8) & 255)) }
+        u32(36 + pcm.count); wav.append(Data("WAVEfmt ".utf8)); u32(16)
+        u16(1); u16(1); u32(16000); u32(32000); u16(2); u16(16)
+        wav.append(Data("data".utf8)); u32(pcm.count); wav.append(pcm)
+        return wav
+    }
 
     private func startAudioEngine() throws {
         guard !isCapturing else { return }

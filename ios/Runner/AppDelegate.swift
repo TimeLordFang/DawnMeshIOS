@@ -9,6 +9,7 @@ import UIKit
     PlatformAudioPlugin.register(with: registry.registrar(forPlugin: "PlatformAudioPlugin")!)
     BleL2capPlugin.register(with: registry.registrar(forPlugin: "BleL2capPlugin")!)
     DawnMeshPlatformPlugin.register(with: registry.registrar(forPlugin: "DawnMeshPlatformPlugin")!)
+    WifiAwarePlugin.register(with: registry.registrar(forPlugin: "WifiAwarePlugin")!)
     BonjourDiscoveryPlugin.register(with: registry.registrar(forPlugin: "BonjourDiscoveryPlugin")!)
   }
 }
