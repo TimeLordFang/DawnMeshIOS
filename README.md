@@ -46,7 +46,7 @@
 
 ## 构建
 
-要求 macOS、完整 Xcode 与 iOS SDK、Flutter **3.47.7** / Dart **3.13.5**、CocoaPods。最低 iOS **15.0**。原生 Opus 1.6.1 已包含源码与许可，不依赖过期的第三方 Opus 二进制。
+要求 macOS、完整 Xcode 与 iOS SDK、Flutter **3.47.8** / Dart **3.13.7**、CocoaPods。最低 iOS **15.0**。原生 Opus 1.6.1 已包含源码与许可，不依赖过期的第三方 Opus 二进制。
 
 ```sh
 flutter config --no-enable-swift-package-manager
@@ -55,7 +55,7 @@ flutter pub get --enforce-lockfile
 ./scripts/build-ios.sh
 ```
 
-本工程显式使用 CocoaPods，以链接 `DawnMeshNative` 与锁定 `flutter_webrtc 1.6.2` 的 `DawnMeshDSP` 采集处理接口。`build-ios.sh` 生成未签名的 `build/ios/iphoneos/Runner.app`；未签名 App 不能直接装到真机。
+本工程显式使用 CocoaPods，以链接 `DawnMeshNative` 与锁定 `flutter_webrtc 1.6.3` 的 `DawnMeshDSP` 采集处理接口。`build-ios.sh` 生成未签名的 `build/ios/iphoneos/Runner.app`；未签名 App 不能直接装到真机。
 
 ### 本地通过 Xcode 安装到 iPhone
 

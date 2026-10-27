@@ -51,7 +51,7 @@ void main() {
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
         await tester.pumpWidget(
-          MaterialApp(home: SessionStage(isNight: false, onToggleTheme: () {})),
+          MaterialApp(home: SessionStage(isNight: false)),
         );
         await tester.pump(const Duration(seconds: 3));
         final home = find.byType(HomeContent, skipOffstage: false);

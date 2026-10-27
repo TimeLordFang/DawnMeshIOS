@@ -10,6 +10,6 @@ Pod::Spec.new do |s|
   s.source_files = '*.{h,mm}'
   s.public_header_files = 'DawnMeshInternetDSP.h'
   s.dependency 'DawnMeshNative'
-  s.dependency 'flutter_webrtc', '1.6.2'
+  s.dependency 'flutter_webrtc', '1.6.3'
   s.pod_target_xcconfig = { 'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17' }
 end

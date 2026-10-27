@@ -3,7 +3,7 @@ PODS:
     - Flutter
   - DawnMeshDSP (1.0.0):
     - DawnMeshNative
-    - flutter_webrtc (= 1.6.2)
+    - flutter_webrtc (= 1.6.3)
   - DawnMeshNative (1.0.0)
   - device_info_plus (0.0.1):
     - Flutter
@@ -11,19 +11,19 @@ PODS:
   - flutter_secure_storage_darwin (10.0.0):
     - Flutter
     - FlutterMacOS
-  - flutter_webrtc (1.6.2):
+  - flutter_webrtc (1.6.3):
     - Flutter
-    - WebRTC-SDK (= 150.7871.01)
+    - WebRTC-SDK (= 150.7871.04)
   - gal (1.0.0):
     - Flutter
     - FlutterMacOS
   - image_picker_ios (0.0.1):
     - Flutter
-  - livekit_client (2.13.1):
+  - livekit_client (2.13.2):
     - Flutter
     - flutter_webrtc
-    - WebRTC-SDK (= 150.7871.01)
-  - WebRTC-SDK (150.7871.01)
+    - WebRTC-SDK (= 150.7871.04)
+  - WebRTC-SDK (150.7871.04)
 
 DEPENDENCIES:
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
@@ -65,16 +65,16 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
-  DawnMeshDSP: e8369a5b05b8269c9359899f0ffc96b849500ae9
+  DawnMeshDSP: 8130c89176acde978428470f7c6c01397b6811f7
   DawnMeshNative: 44b2409ebf2875c4d6774a4ed77cff7285a719f2
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   flutter_secure_storage_darwin: 46e401699982ee74142909676535e0f6a7321e58
-  flutter_webrtc: 99283145164f482a16bf7122ef407b5d59d43158
+  flutter_webrtc: 7948417965923736a584f9a1c5eeccaccf3372cf
   gal: baecd024ebfd13c441269ca7404792a7152fde89
-  image_picker_ios: c06ac6fe6dc36476da54dbe860dbf2a1ef20fe1e
-  livekit_client: 8d11d6ce08ea4a817775ebd83353fedabd944205
-  WebRTC-SDK: 7dc931c64c00c735a614382f1a59cf65019c3c17
+  image_picker_ios: 9285ee31b06d6e15629dd5713b890f0c457a0a8b
+  livekit_client: 01ed81cfefe91ab3a55835250fa7ae353016817e
+  WebRTC-SDK: 71bce2be85c3082d24bbfd1a9930ea07d0c494c1
 
 PODFILE CHECKSUM: 6d685d95b6656dd82433cb77f97e7a080fb71161
 

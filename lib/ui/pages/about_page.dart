@@ -129,7 +129,7 @@ class _AboutPageState extends State<AboutPage> {
                           icon: const Icon(Icons.copy, size: 18),
                           label: Text(s.copyReport),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.dawnCoral,
+                            backgroundColor: AppTheme.lightAccent,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -154,8 +154,8 @@ class _AboutPageState extends State<AboutPage> {
     final s = AppStrings.of(context);
     final isNight = widget.isNight;
     final bgGradient = isNight
-        ? [AppTheme.nightAbyss, AppTheme.nightDeepOcean]
-        : [AppTheme.lightBg, AppTheme.dawnCoral.withValues(alpha: 0.15)];
+        ? [AppTheme.brandNavy, AppTheme.brandIndigo]
+        : [AppTheme.lightBg, AppTheme.lightAccent.withValues(alpha: 0.15)];
     final textPrimary = isNight
         ? AppTheme.darkTextPrimary
         : AppTheme.lightTextPrimary;
@@ -220,8 +220,11 @@ class _AboutPageState extends State<AboutPage> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(14),
-                            child: Image.asset('assets/branding/dawnmesh-icon.png',
-                              width: 64, height: 64),
+                            child: Image.asset(
+                              'assets/branding/dawnmesh-icon.png',
+                              width: 64,
+                              height: 64,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -264,7 +267,7 @@ class _AboutPageState extends State<AboutPage> {
                             icon: const Icon(Icons.refresh, size: 18),
                             label: Text(s.checkUpdate),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.dawnCoral,
+                              backgroundColor: AppTheme.lightAccent,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
@@ -410,7 +413,7 @@ class _AboutPageState extends State<AboutPage> {
         children: [
           Text(
             s.updateAvailable(avail.versionName),
-            style: const TextStyle(fontSize: 13, color: AppTheme.sunWarmYellow),
+            style: const TextStyle(fontSize: 13, color: AppTheme.brandGold),
           ),
           const SizedBox(height: 8),
           TextButton.icon(

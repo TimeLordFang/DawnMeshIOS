@@ -1,28 +1,28 @@
 [
   {
     "pod": "livekit_client",
-    "version": "2.13.1",
+    "version": "2.13.2",
     "file": "LiveKitPlugin.swift",
     "sha256": "3c55203a3b9b7e09b4e275c6b221a2564f1bdfc5762d5e2dff5aa1d011e36827",
     "patch": "LiveKitPlugin.swift.patch"
   },
   {
     "pod": "flutter_webrtc",
-    "version": "1.6.2+hotfix.4",
+    "version": "1.6.3",
     "file": "AudioUtils.m",
     "sha256": "802f1b9c4e3298c42ba789cd51960ff006e6689b7b4579abfea04f9fe4da9f87",
     "patch": "AudioUtils.m.patch"
   },
   {
     "pod": "flutter_webrtc",
-    "version": "1.6.2+hotfix.4",
+    "version": "1.6.3",
     "file": "FlutterRTCAudioSink.mm",
     "sha256": "4931d03db52c4c20b7cb0cd52a6206967b63ed7c625869e2950d3c0035f51d12",
     "patch": "FlutterRTCAudioSink.mm.patch"
   },
   {
     "pod": "flutter_webrtc",
-    "version": "1.6.2+hotfix.4",
+    "version": "1.6.3",
     "file": "FlutterRTCMediaRecorder.m",
     "sha256": "40dcc2d9b0ab85eec40a65667224daa4e1fd811b58d72ea9327f227ef64a04e0",
     "patch": "FlutterRTCMediaRecorder.m.patch"
@@ -36,7 +36,7 @@
   },
   {
     "pod": "flutter_webrtc",
-    "version": "1.6.2+hotfix.4",
+    "version": "1.6.3",
     "file": "audio_sink_bridge.cpp",
     "sha256": "ab9635de55ac7e1d61f3e504ef765f92d716422e7c5cd89adacdfbf730fcd207",
     "exclude_from_compile": true

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(dirname "$0")/toolchain.sh"
 cd "$(dirname "$0")/.."
 cmake -S native -B native/build -DCMAKE_BUILD_TYPE=Debug
 cmake --build native/build --parallel 4

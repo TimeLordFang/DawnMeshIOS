@@ -8,7 +8,6 @@ import '../widgets/ios_nearby_invite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../widgets/noise_reduction_control.dart';
 import '../widgets/member_safety_sheet.dart';
 import '../widgets/wifi_aware_control.dart';
 import '../../core/fusion/fusion_transport.dart';
@@ -24,9 +23,6 @@ import '../widgets/celestial_canvas.dart';
 import 'home_page.dart';
 import 'room_page.dart';
 import 'diagnostics_sheet.dart';
-import 'about_page.dart';
-import 'courier_page.dart';
-import 'debug_log_page.dart';
 import '../widgets/room_chat_sheet.dart';
 import '../widgets/room_invite_row.dart';
 import '../../l10n/app_strings.dart';
@@ -48,13 +44,11 @@ import '../../l10n/app_strings.dart';
 ///   - 麦克风推迟到动画跑完再开，原因见 [RoomSession.startAudio]。
 class SessionStage extends StatefulWidget {
   final bool isNight;
-  final VoidCallback onToggleTheme;
   final InternetRoomSession? initialInternetSession;
 
   const SessionStage({
     super.key,
     required this.isNight,
-    required this.onToggleTheme,
     this.initialInternetSession,
   });
 
@@ -240,12 +234,6 @@ class _SessionStageState extends State<SessionStage>
     setState(() => _internetSession = session);
   }
 
-  void _showCourier() {
-    Navigator.push(context, MaterialPageRoute<void>(
-      builder: (_) => CourierPage(session: _session),
-    ));
-  }
-
   void _showDiagnostics() {
     final session = _session;
     if (session == null) return;
@@ -257,13 +245,6 @@ class _SessionStageState extends State<SessionStage>
         memberCount: session.members.length,
         session: session,
       ),
-    );
-  }
-
-  void _showDebugLogs() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => DebugLogPage(isNight: widget.isNight)),
     );
   }
 
@@ -499,51 +480,14 @@ class _SessionStageState extends State<SessionStage>
         top: 40,
         right: 8,
         child: fade(
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: s.isEn ? 'Offline forwarding' : '离线转交',
-                icon: const Icon(Icons.mark_email_unread_outlined, color: Colors.white),
-                onPressed: _showCourier,
-              ),
-              IconButton(
-                tooltip: s.tooltipDebugLogs,
-                iconSize: 28,
-                padding: const EdgeInsets.all(10),
-                icon: const Icon(Icons.terminal_rounded, color: Colors.white),
-                onPressed: _showDebugLogs,
-              ),
-              IconButton(
-                tooltip: s.tooltipInfoAndUpdates,
-                iconSize: 28,
-                padding: const EdgeInsets.all(10),
-                icon: const Icon(
-                  Icons.info_outline_rounded,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AboutPage(isNight: widget.isNight),
-                    ),
-                  );
-                },
-              ),
-              IconButton(
-                tooltip: s.tooltipToggleTheme,
-                iconSize: 28,
-                padding: const EdgeInsets.all(10),
-                icon: Icon(
-                  widget.isNight
-                      ? Icons.nightlight_round
-                      : Icons.wb_sunny_rounded,
-                  color: Colors.white,
-                ),
-                onPressed: widget.onToggleTheme,
-              ),
-            ],
+          RoomSettingsButton(
+            color: Colors.white,
+            session: _session,
+            dismissEvents: _session?.stateStream.where(
+              (state) => state == RoomState.ended,
+            ),
+            items: (context) =>
+                _session == null ? [] : _roomSettingsItems(context, _session!),
           ),
           drift: -20,
         ),
@@ -579,6 +523,56 @@ class _SessionStageState extends State<SessionStage>
             ],
           ),
         ),
+      ),
+    ];
+  }
+
+  List<Widget> _roomSettingsItems(
+    BuildContext sheetContext,
+    RoomSession session,
+  ) {
+    final s = AppStrings.of(context);
+    return [
+      if (session.secureCodec?.authentication != null)
+        ListTile(
+          leading: const Icon(Icons.verified_user_outlined),
+          title: Text(s.memberSafetyNumbers),
+          onTap: () {
+            Navigator.pop(sheetContext);
+            showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              builder: (_) => MemberSafetySheet(session: session),
+            );
+          },
+        ),
+      if (!session.roomEnded && !session.textOnly)
+        StreamBuilder<void>(
+          stream: session.controlsStream,
+          builder: (context, _) => SwitchListTile(
+            value: session.retainVoiceNotes,
+            onChanged: session.setRetainVoiceNotes,
+            title: Text(s.retainVoiceNotes),
+            subtitle: Text(s.retainVoiceNotesHint),
+          ),
+        ),
+
+      if (usesIosUi &&
+          !session.roomEnded &&
+          session.mode != RoomMode.bluetoothPtt)
+        const IosNearbyInvite(),
+      if (session.transport case final FusionTransport transport
+          when !session.roomEnded)
+        WifiAwareControl(link: transport.wifiAware),
+      if (!session.roomEnded && session.mode == RoomMode.fusion)
+        FusionAudioProfileControl(settings: session.fusionAudio),
+      ListTile(
+        leading: const Icon(Icons.info_outline),
+        title: Text(s.tooltipDiagnostics),
+        onTap: () {
+          Navigator.pop(sheetContext);
+          _showDiagnostics();
+        },
       ),
     ];
   }
@@ -659,67 +653,8 @@ class _SessionStageState extends State<SessionStage>
             dismissEvents: session.stateStream.where(
               (state) => state == RoomState.ended,
             ),
-            items: (sheetContext) => [
-              ListTile(
-                leading: const Icon(Icons.mark_email_unread_outlined),
-                title: Text(s.isEn ? 'Offline forwarding' : '离线转交'),
-                onTap: () { Navigator.pop(sheetContext); _showCourier(); },
-              ),
-              if (session.secureCodec?.authentication != null)
-                ListTile(
-                  leading: const Icon(Icons.verified_user_outlined),
-                  title: Text(s.memberSafetyNumbers),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    showModalBottomSheet<void>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (_) => MemberSafetySheet(session: session),
-                    );
-                  },
-                ),
-              if (!session.roomEnded && !session.textOnly)
-                StreamBuilder<void>(
-                  stream: session.controlsStream,
-                  builder: (context, _) => SwitchListTile(
-                    value: session.retainVoiceNotes,
-                    onChanged: session.setRetainVoiceNotes,
-                    title: Text(s.retainVoiceNotes),
-                    subtitle: Text(s.retainVoiceNotesHint),
-                  ),
-                ),
-
-              if (usesIosUi &&
-                  !session.roomEnded &&
-                  session.mode != RoomMode.bluetoothPtt)
-                const IosNearbyInvite(),
-              if (session.transport case final FusionTransport transport when !session.roomEnded)
-                WifiAwareControl(link: transport.wifiAware),
-              if (!session.roomEnded && session.mode == RoomMode.fusion)
-                FusionAudioProfileControl(settings: session.fusionAudio),
-              if (!session.roomEnded)
-                ListTile(
-                  title: const Text('麦克风降噪'),
-                  subtitle: const Text('只影响本机发出的语音'),
-                  trailing: NoiseReductionControl(isNight: widget.isNight),
-                ),
-              ListTile(
-                leading: const Icon(Icons.terminal_rounded),
-                title: Text(s.tooltipDebugLogs),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showDebugLogs();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: Text(s.tooltipDiagnostics),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showDiagnostics();
-                },
-              ),
-            ],
+            session: session,
+            items: (sheetContext) => _roomSettingsItems(sheetContext, session),
           ),
           from: -16,
         ),

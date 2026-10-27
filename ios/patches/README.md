@@ -6,8 +6,8 @@
 
 | 包 | 固定来源版本 | 修复 |
 | --- | --- | --- |
-| livekit_client | 2.13.1 | 蓝牙 HFP 枚举采用新名称，保留 Dart 的 `allowBluetooth` 配置键 |
-| flutter_webrtc | 1.6.2+hotfix.4 | 同一 HFP 枚举更名；Core Audio UInt32 字段在转换前检查乘法和尺寸边界；录音回调用 weak/strong 引用避免循环持有 |
+| livekit_client | 2.13.2 | 蓝牙 HFP 枚举采用新名称，保留 Dart 的 `allowBluetooth` 配置键 |
+| flutter_webrtc | 1.6.3 | 同一 HFP 枚举更名；Core Audio UInt32 字段在转换前检查乘法和尺寸边界；录音回调用 weak/strong 引用避免循环持有 |
 | device_info_plus | 13.3.0 | 空闲内存以 64 位字节数计算，避免超过 4 GiB 时截断 |
 
 `audio_sink_bridge.cpp` 由 `FlutterRTCAudioSink.mm` 直接包含，去掉它独立的重复编译项。
@@ -26,3 +26,5 @@
 3. 执行 `ruby test/ios_pod_patches_test.rb`、`pod install`，再完整构建 iOS。
 
 补丁保留上游原许可证；完整第三方声明见对应 pub 包中的 LICENSE 和源码版权声明。
+
+2026-10-27：已复查上述新稳定插件。补丁覆盖的原始源文件 SHA-256 与上一版相同，修复尚未合入这些文件，继续保留现有补丁并更新来源版本标记。

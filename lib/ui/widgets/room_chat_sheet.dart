@@ -144,9 +144,7 @@ class _RoomChatSheetState extends State<RoomChatSheet> {
             child: Text(s.cancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.darkLeaveRosePink,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.darkDanger),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(s.chatRecall),
           ),
@@ -246,7 +244,7 @@ class _RoomChatSheetState extends State<RoomChatSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
               decoration: BoxDecoration(
-                color: (isNight ? AppTheme.moonSilverWhite : AppTheme.dawnCoral)
+                color: (isNight ? AppTheme.warmWhite : AppTheme.lightAccent)
                     .withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -256,9 +254,7 @@ class _RoomChatSheetState extends State<RoomChatSheet> {
                   Icon(
                     Icons.star,
                     size: 10,
-                    color: isNight
-                        ? AppTheme.moonSilverWhite
-                        : AppTheme.dawnCoral,
+                    color: isNight ? AppTheme.warmWhite : AppTheme.lightAccent,
                   ),
                   const SizedBox(width: 2),
                   Text(
@@ -267,8 +263,8 @@ class _RoomChatSheetState extends State<RoomChatSheet> {
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: isNight
-                          ? AppTheme.moonSilverWhite
-                          : AppTheme.dawnCoral,
+                          ? AppTheme.warmWhite
+                          : AppTheme.lightAccent,
                     ),
                   ),
                 ],
@@ -340,7 +336,7 @@ class _RoomChatSheetState extends State<RoomChatSheet> {
     final textSecondary = isNight
         ? AppTheme.darkTextSecondary
         : AppTheme.lightTextSecondary;
-    final accentColor = isNight ? AppTheme.nightSkyBlue : AppTheme.dawnCoral;
+    final accentColor = isNight ? AppTheme.darkAccent : AppTheme.lightAccent;
 
     final messages = widget.session.chatMessages;
     final activeMemberIds = widget.session.members
@@ -590,9 +586,9 @@ class _RoomChatSheetState extends State<RoomChatSheet> {
                                                     color: isLocal
                                                         ? (isNight
                                                               ? AppTheme
-                                                                    .nightSkyBlue
+                                                                    .darkAccent
                                                               : AppTheme
-                                                                    .dawnCoral)
+                                                                    .lightAccent)
                                                         : (isNight
                                                               ? const Color(
                                                                   0xFF1E2D44,
@@ -652,7 +648,9 @@ class _RoomChatSheetState extends State<RoomChatSheet> {
                                                           style: TextStyle(
                                                             fontSize: 14.5,
                                                             color: isLocal
-                                                                ? Colors.white
+                                                                ? AppTheme.onAccent(
+                                                                    isNight,
+                                                                  )
                                                                 : textPrimary,
                                                             height: 1.35,
                                                           ),
@@ -759,8 +757,8 @@ class _RoomChatSheetState extends State<RoomChatSheet> {
                                           ),
                                       filled: true,
                                       fillColor: isNight
-                                          ? const Color(0xFF121B2B)
-                                          : const Color(0xFFF1ECE5),
+                                          ? AppTheme.darkBg
+                                          : AppTheme.lightBg,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(20),
                                         borderSide: BorderSide.none,

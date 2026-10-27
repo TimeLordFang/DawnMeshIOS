@@ -441,10 +441,10 @@ class _DebugLogPageState extends State<DebugLogPage> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: isNight
-                ? const [AppTheme.nightAbyss, AppTheme.darkBg]
+                ? const [AppTheme.brandNavy, AppTheme.darkBg]
                 : [
                     AppTheme.lightBg,
-                    AppTheme.dawnCoral.withValues(alpha: 0.10),
+                    AppTheme.lightAccent.withValues(alpha: 0.10),
                   ],
           ),
         ),
@@ -779,8 +779,8 @@ class _DebugLogPageState extends State<DebugLogPage> {
         selected: selected,
         onSelected: (_) => setState(() => _level = level),
         selectedColor: widget.isNight
-            ? AppTheme.nightSkyBlue
-            : AppTheme.dawnCoral,
+            ? AppTheme.darkAccent
+            : AppTheme.lightAccent,
         backgroundColor: card,
         labelStyle: TextStyle(
           color: selected ? Colors.white : primary,
