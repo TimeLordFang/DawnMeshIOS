@@ -75,6 +75,7 @@ Future<void> _joinLocal(_Node guest, _Node neighbor) async {
   expect(
     await guest.link.connectLocal('127.0.0.1', port: neighbor.link.boundPort),
     true,
+    reason: 'Local fusion connection to port ${neighbor.link.boundPort}',
   );
   await guest.session.joinRoom(startAudio: false);
   await _until(() => guest.session.state == RoomState.inRoom);
@@ -207,7 +208,11 @@ void main() {
     );
     final state = nodes.last.link.signedState!;
     expect(state.length, greaterThan(512));
-    expect(await nodes.last.link.identity!.verifyState(state), true);
+    expect(
+      await nodes.last.link.identity!.verifyState(state),
+      true,
+      reason: 'The complete 16-member roster must retain its host signature',
+    );
     expect(host.session.members.last.memberId, 16);
     await nodes.last.session.startAudio();
     nodes.last.session.setPtt(true);
@@ -220,6 +225,8 @@ void main() {
     expect(
       nodes.take(15).every((node) => node.audio.submittedFrames.length == 1),
       true,
+      reason: 'Received audio counts: '
+          '${nodes.take(15).map((node) => node.audio.submittedFrames.length).toList()}',
     );
     nodes.last.session.setPtt(false);
     final extra = await _node(room, invite, 17);
