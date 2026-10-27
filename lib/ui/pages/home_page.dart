@@ -591,7 +591,13 @@ class _HomeContentState extends State<HomeContent> {
                           return Column(
                             children: [
                               SizedBox(
-                                height: 100,
+                                height:
+                                    100 +
+                                    (MediaQuery.textScalerOf(context)
+                                                    .scale(15) -
+                                                15)
+                                            .clamp(0.0, 30.0) *
+                                        4,
                                 child: Row(
                                   children: [
                                     SizedBox(
@@ -712,14 +718,27 @@ class _HomeContentState extends State<HomeContent> {
                               ),
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
-                                child: Text(
-                                  _selectedMode == RoomMode.wifiFullDuplex
-                                      ? s.createWifiRoom
-                                      : s.createBleRoom,
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.add_circle_outline_rounded,
+                                      color: isNight
+                                          ? AppTheme.brandNavy
+                                          : AppTheme.brandGold,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _selectedMode == RoomMode.wifiFullDuplex
+                                          ? s.createWifiRoom
+                                          : s.createBleRoom,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -816,13 +835,17 @@ class _HomeContentState extends State<HomeContent> {
                           ),
                           if (_isScanning) ...[
                             const SizedBox(width: 8),
-                            Text(
-                              s.detectingRooms,
-                              style: TextStyle(
-                                color: isNight
-                                    ? AppTheme.darkAccent
-                                    : AppTheme.lightAccent,
-                                fontSize: 14,
+                            Flexible(
+                              child: Text(
+                                s.detectingRooms,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isNight
+                                      ? AppTheme.darkAccent
+                                      : AppTheme.lightAccent,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -1550,7 +1573,7 @@ class _InternetEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isNight ? AppTheme.darkAccent : AppTheme.lightPrimary;
+    final accent = isNight ? AppTheme.darkAccent : AppTheme.lightAccent;
     return Material(
       color: isNight ? AppTheme.darkCardBg : AppTheme.lightCardBg,
       shape: RoundedRectangleBorder(
@@ -1628,7 +1651,7 @@ class _ModeSelectChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = isNight ? AppTheme.darkAccent : AppTheme.lightPrimary;
+    final activeColor = isNight ? AppTheme.darkAccent : AppTheme.lightAccent;
     final cardBg = isNight ? AppTheme.darkCardBg : AppTheme.lightCardBg;
     final textPrimary = isNight
         ? AppTheme.darkTextPrimary
@@ -1643,7 +1666,11 @@ class _ModeSelectChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         decoration: BoxDecoration(
-          color: isSelected ? activeColor.withValues(alpha: 0.12) : cardBg,
+          color: isSelected
+              ? (isNight
+                    ? activeColor.withValues(alpha: 0.12)
+                    : const Color(0xFFFFF0E5))
+              : cardBg,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isSelected
