@@ -111,3 +111,5 @@ iOS 独立版本从 `1.0.0+1` 开始，对应标签 `v1.0.0`；功能和协议�
 本地设置用 UserDefaults，服务器配置和安装身份通过 flutter_secure_storage 保存到 Keychain。卸载再安装时，iOS Keychain 可能保留原身份。照片仅在用户主动选择/保存时访问。
 
 协议、安全设计和来源信息见 [互通说明](docs/INTEROPERABILITY.md)、[安卓版安全基线](docs/ANDROID_SECURITY_REVIEW.md)、[来源与许可](docs/UPSTREAM.md)。
+
+开发与发布：[本地预检和候选流程](docs/RELEASING.md)；Personal Team 与可选 Aware：[Xcode 签名说明](docs/XCODE_SIGNING.md)。

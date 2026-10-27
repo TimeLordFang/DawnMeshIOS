@@ -1,0 +1,4 @@
+// Personal Team-compatible defaults. Local opt-in is deliberately untracked.
+DAWNMESH_ENTITLEMENTS_FILE = Runner/Runner.entitlements
+DAWNMESH_WIFI_AWARE_ENABLED = NO
+#include? "Signing.local.xcconfig"

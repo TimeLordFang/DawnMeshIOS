@@ -17,3 +17,9 @@ xcuserdata/
 *.mobileprovision
 native/build/
 artifacts/
+
+# Machine-specific signing capability selection
+ios/Flutter/Signing.local.xcconfig
+
+# Local Python tooling caches
+__pycache__/

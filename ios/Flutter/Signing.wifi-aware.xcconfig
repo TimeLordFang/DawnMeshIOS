@@ -1,0 +1,3 @@
+// Requires a provisioning profile with Wi-Fi Aware Publish/Subscribe.
+DAWNMESH_ENTITLEMENTS_FILE = Runner/RunnerAware.entitlements
+DAWNMESH_WIFI_AWARE_ENABLED = YES

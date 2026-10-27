@@ -97,6 +97,8 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
+	<key>DawnMeshWifiAwareEnabled</key>
+	<string>$(DAWNMESH_WIFI_AWARE_ENABLED)</string>
 	<key>WiFiAwareServices</key>
 	<dict>
 		<key>_dawnmesh._tcp</key>

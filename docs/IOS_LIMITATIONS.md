@@ -1,4 +1,6 @@
-# iOS 能力边界与签名要求（1.2.0）
+# iOS 能力边界与签名要求（1.2.x）
+
+当前默认构建适配 Personal Team，不申请 Wi-Fi Aware。该加速能力改为显式选择获授权签名配置，详见 [Xcode 签名](XCODE_SIGNING.md)。普通通信路径不变。
 
 ## 1. 苹果点对点 Wi-Fi 与 Android Wi-Fi Direct
 

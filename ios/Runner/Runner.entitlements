@@ -6,11 +6,5 @@
 	<array>
 		<string>$(AppIdentifierPrefix)$(CFBundleIdentifier)</string>
 	</array>
-
-	<key>com.apple.developer.wifi-aware</key>
-	<array>
-		<string>Publish</string>
-		<string>Subscribe</string>
-	</array>
 </dict>
 </plist>

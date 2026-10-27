@@ -12,4 +12,4 @@ build/native-tests/wire-tests
 swiftc -module-cache-path "$PWD/build/swift-module-cache" ios/Runner/ApplePeerWiFi.swift test/swift_peer/main.swift -o build/native-tests/peer-tests
 build/native-tests/peer-tests
 swiftc -frontend -parse ios/Runner/*.swift
-plutil -lint ios/Runner/PrivacyInfo.xcprivacy ios/Runner/en.lproj/InfoPlist.strings ios/Runner/zh-Hans.lproj/InfoPlist.strings ios/Runner/Info.plist ios/Runner/Runner.entitlements ios/Runner.xcodeproj/project.pbxproj
+plutil -lint ios/Runner/PrivacyInfo.xcprivacy ios/Runner/en.lproj/InfoPlist.strings ios/Runner/zh-Hans.lproj/InfoPlist.strings ios/Runner/Info.plist ios/Runner/Runner.entitlements ios/Runner/RunnerAware.entitlements ios/Runner.xcodeproj/project.pbxproj

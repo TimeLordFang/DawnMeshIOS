@@ -22,6 +22,13 @@ final class WifiAwarePlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
             else { result(["started": false, "status": "此系统未提供 Wi-Fi Aware"]) }
             return
         }
+        guard Bundle.main.object(forInfoDictionaryKey: "DawnMeshWifiAwareEnabled") as? String == "YES" else {
+            let reason = "此安装包未启用可选 Wi-Fi Aware 加速，原连接可继续使用"
+            if call.method == "capabilities" { result(["supported": false, "reason": reason]) }
+            else if call.method == "stop" { result(nil) }
+            else { result(["started": false, "status": reason]) }
+            return
+        }
         #if targetEnvironment(simulator)
         result(["supported": false, "started": false, "reason": "模拟器不提供 Wi-Fi Aware 无线连接"])
         #else
