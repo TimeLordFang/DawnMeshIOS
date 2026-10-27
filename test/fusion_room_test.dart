@@ -88,8 +88,12 @@ Future<void> _joinLocal(_Node guest, _Node neighbor) async {
     detail: 'admission of ${guest.session.selfNickname}',
     diagnostics: () => 'state=${guest.session.state}, '
         'codec=${guest.session.secureCodec != null}, '
+        'self=${guest.session.selfMemberId}, '
+        'epoch=${guest.session.secureCodec?.epoch}, '
+        'certified=${guest.session.secureCodec?.authentication?.members.length}, '
         'members=${guest.session.members.length}, '
         'neighborMembers=${neighbor.session.members.length}, '
+        'neighborEpoch=${neighbor.session.secureCodec?.epoch}, '
         'links=${guest.link.peerCount}, queued=${guest.link.queuedPackets}',
   );
 }
