@@ -29,7 +29,7 @@ iOS 预检覆盖锁定依赖、发布规则测试、静态检查、Flutter 回�
 正式标签必须指向成功候选的同一个提交，不能在候选通过后再修改代码或说明而直接打正式标签。例如：
 
 ```sh
-git tag -a v1.2.3 'v1.2.3-rc.2^{commit}' -m 'DawnMesh 1.2.3'
+git tag -a v1.2.3 'v1.2.3-rc.3^{commit}' -m 'DawnMesh 1.2.3'
 git push origin v1.2.3
 ```
 
