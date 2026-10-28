@@ -1,6 +1,6 @@
 # Xcode 真机签名与可选 Wi-Fi Aware
 
-当前应用版本保持 `1.2.2+63`。Personal Team 报错 “do not support the Wi-Fi Aware capability” 是签名权限限制，不是 Swift 语法错误；未签名编译成功也不证明描述文件可用。
+当前应用版本为 `1.2.3+64`。Personal Team 报错 “do not support the Wi-Fi Aware capability” 是签名权限限制，不是 Swift 语法错误；未签名编译成功也不证明描述文件可用。
 
 ## Personal Team：直接使用默认配置
 
