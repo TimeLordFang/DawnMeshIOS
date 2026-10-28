@@ -1,40 +1,41 @@
-# 发布流程：先预检和候选，再正式发布
+# 发布：本地预检、候选与正式晋级
 
-当前目标版本为 `1.2.3+64`；候选轮次保持此应用版本和构建号。不要为调试、重试 CI 或修改构建配置连续递增正式版本；已发布标签和正式附件不覆盖。
+当前目标应用版本为 **1.2.4+65**，本轮候选为 **v1.2.4-rc.1**。同一目标内修复使用 `rc.2`、`rc.3` 等轮次，不通过连续增加补丁版本来排查 CI；已发布正式标签和附件不覆盖。
 
 ## 本地预检
 
-先确保 Flutter（或 `FLUTTER_ROOT`）、CMake、CocoaPods 和完整 Xcode 在当前环境可用；本地预检会在缺少工具时先停止。可复用已安装 Android SDK 中的 `cmake/<版本>/bin`，把它加入 `PATH`。
+先按 [开发指南](DEVELOPMENT.md) 准备工具链，再执行：
 
 ```sh
 ./scripts/preflight-release.sh
 ```
 
-iOS 预检覆盖锁定依赖、发布规则测试、静态检查、Flutter 回归、原生检查及未签名设备构建。可选 Aware 变体另运行 `./scripts/build-ios.sh --wifi-aware`。未签名构建不证明 Personal Team 能完成签名；签名与两种配置见 [Xcode 签名说明](XCODE_SIGNING.md)。
+真实中继用例需启动测试服务并设置 `DAWNMESH_FUSION_TEST_URL`；未配置时该项跳过，不能计为已验收。两端网络回归串行执行。
 
-真实中继用例需设置 `DAWNMESH_FUSION_TEST_URL`。未设置时该项跳过，不能将结果记为完整中继验收。两个移动端仓库的网络测试串行执行，避免固定端口冲突。签名描述文件和无线真机能力另按设备验收。
+iOS 预检覆盖锁定依赖、发布规则、静态检查、Flutter、C++/Swift/插件补丁及普通未签名设备构建；另运行 `./scripts/build-ios.sh --wifi-aware` 检查可选变体。Personal Team 与 Aware 签名能力见 [Xcode 签名](XCODE_SIGNING.md)。
 
-## 同一目标版本的候选
+## 创建候选
 
-本次目标版本只设置一次 `1.2.3+64`；Android/iOS 同步应用版本与构建号、更新日志和发布说明。候选轮次用 `rc.N` 区分，正式 `v1.2.3` 只提升两端均验证成功的候选提交。
-
-1. 本地预检通过后提交并推送源码。
-2. 使用 `v1.2.3-rc.1`（也支持 `-pre.1`、`-alpha.1`、`-beta.1`）标签触发候选构建。
-3. 候选修复继续使用目标版本 `1.2.3`，以 `-rc.2`、`-rc.3` 区分；不要用 `1.2.4`、`1.2.5` 代替候选轮次。若上传 Play/TestFlight，按平台规则提高构建号，并同步两端。
-4. CI 将候选标记为 Prerelease，并显式设为非 Latest；候选包中的应用版本保持数字格式，符合 iOS 要求。
-5. 验证候选包、签名与设备清单。所有源码、版本和发布说明需在候选验证前准备好。
-
-## 提升为正式版本
-
-正式标签必须指向成功候选的同一个提交，不能在候选通过后再修改代码或说明而直接打正式标签。例如：
+1. 同步两端 `pubspec.yaml`、更新服务版本和中英文更新日志，准备 `docs/RELEASE_<版本>.md`。
+2. 完成本地预检，按范围提交源代码和文档；排除个人 Team/Scheme、密钥、缓存及仅本地保存的研究稿。
+3. 推送主分支与未占用的候选标签。当前示例：
 
 ```sh
-git tag -a v1.2.3 'v1.2.3-rc.3^{commit}' -m 'DawnMesh 1.2.3'
-git push origin v1.2.3
+git tag -a v1.2.4-rc.1 -m 'DawnMesh 1.2.4 build 65 candidate 1'
+git push origin main v1.2.4-rc.1
 ```
 
-本仓库 GitHub 远程名为 `origin`；Android 仓库另外同步其 GitHub 与自建镜像。
+Android GitHub 远程名为 `github`，另同步自建镜像 `origin`；iOS 的 GitHub 远程名为 `origin`。CI 将候选设为 Prerelease、非 Latest。应用内版本保持数字格式，不把 `-rc.N` 写进 iOS 版本字段。若上传 Play/TestFlight，构建号还需满足平台递增规则并同步两端。
 
-发布门禁会核实：候选非草稿、带 Prerelease 标记、包和校验文件齐备、候选与正式标签提交完全相同，以及该候选最近一次标签检查成功。失败或仍在运行的重试不能借用更早的成功结果。未满足条件时停止发布，不以递增正式版本绕过检查。
+## 同一提交提升为正式版
 
-正式标签仍会重新执行检查和打包，因此使用对应 Release 随包的校验文件。之后使用新工作流的正式版本不再覆盖既有附件；历史标签保持原样。
+两端候选任务成功、附件与校验值齐全并完成相应验收后，正式标签必须指向该候选的同一个提交。源码或说明再有改变，就先验证新的候选。
+
+```sh
+git tag -a v1.2.4 'v1.2.4-rc.1^{commit}' -m 'DawnMesh 1.2.4'
+git push origin v1.2.4
+```
+
+发布门禁核对候选不是草稿、具有 Prerelease 标记、包和 SHA-256 齐备、提交相同，且最近一次候选标签校验成功。正式标签仍会重新构建；重构建的哈希可能不同，下载时使用对应 Release 随包的校验文件。
+
+正式 Release 提供 Android 签名 APK/AAB 或 iOS 两种未签名 App ZIP。iOS ZIP 不能直接安装，需相应签名。构建成功不替代 [真机验收](MANUAL_ACCEPTANCE.md)；当前证据见 [验证基线](VALIDATION.md)。

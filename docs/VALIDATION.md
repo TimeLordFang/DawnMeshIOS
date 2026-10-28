@@ -1,76 +1,50 @@
-# 验证记录
+# 当前验证基线与设备验收
 
-## 1.2.3 / 构建 64（2026-10-28）
+更新日期：2026-10-28。当前候选为 **1.2.4+65**，最近正式版本为 **1.2.3+64**。本页保留本轮候选与最近正式版的验证结果和复核入口；历史测试数字、临时排查记录及旧环境结论通过对应 Git 标签和正式版发布说明追溯。
 
-- 发布准备前，Android `02d333b` 与 iOS `11c5e71` 的 GitHub Actions 均成功，包含完整测试、原生检查及平台构建。对应 [Android 运行](https://github.com/TimeLordFang/DawnMesh/actions/runs/40617582638) 与 [iOS 运行](https://github.com/TimeLordFang/DawnMeshIOS/actions/runs/40617316553)。
-- 两端版本统一至 `1.2.3+64` 后，本地 Android 383 项、iOS 402 项 Flutter 全量回归通过，均启用真实本机 Go 中继，无跳过；iOS 独立入房专项 3 项也通过，两端静态检查无问题。
-- Android 发布预检覆盖原生 ASan/UBSan、JVM 与 Lint、签名 APK/AAB 及 16 KiB ZIP/ELF 对齐。包内版本核对为 `1.2.3 / 64`，两个归档 CRC 通过。
-- iOS 原生 C++、Swift 与苹果点对点 TCP 回归通过；普通版和 Wi-Fi Aware 版设备目标构建均通过，包内版本均为 `1.2.3 / 64`，Aware 开关分别为 `NO` 与 `YES`。
-- 融合回归独立验证确认丢包后的最后一次重试，以及满员名单/密钥逐步收敛。实时语音用有限连续帧检查可达性、来源、内容和逐帧去重，保留既有的过期音频丢弃策略。
-- 满员容量用例只隔离已入房会话的周期维护，显式驱动名单和签名状态同步；连接中的重试仍按真实定时器运行。正常心跳、重连与成员直连另由独立用例覆盖，避免将 16 台设备的维护开销集中到一个测试事件循环后误判超时。生产定时器与队列不变。
-- 在临时源码副本中为每次成员签名验证增加 5ms，复现原满员夹具的入房超时；隔离周期维护后的夹具在相同开销下通过。耗时注入和副本不进入正式源码或发布包。
-- 发布按候选标签验证后再提升相同提交为正式 `v1.2.3`。标签任务会再次构建和校验；下载时以对应 Release 的附件及随包 SHA-256 为准，不混用其他构建的校验值。
-- iOS 发布附件未签名。射频互通、设备配对、功耗与锁屏仍按 [手动清单](MANUAL_ACCEPTANCE.md) 验收，自动化结果不替代真机结果。
+## 1.2.4-rc.1 / 构建 65
 
-## 1.2.2 / 构建 63（2026-10-27）
+候选包含统一弹窗按钮、邀请码滚动和文档合并，未修改传输或加密协议。前置 UI 专项 Android 42 项、iOS 47 项通过，两端静态检查通过；包括 iOS 键盘出现后的三类建房流程。
 
-- Android 361 项、iOS 380 项 Flutter 全量回归通过，均启用真实本机 Go 中继，无跳过；两端静态检查无问题。
-- 新增 9 项回归：四阶段 PAKE 丢包、认证后入房请求/确认丢失、完成握手重放、补发上限/新传输编号、换钥后缓存失效。最初五个丢包/重放用例在旧实现稳定失败；修复后的认证专项 21 项通过。原有猜测限流仍约束唯一挑战，重复请求只返回同一缓存挑战。
-- 本地最终 Android 签名 APK/AAB 和 iOS Release 均编译通过，包内版本 1.2.2 / 63。APK v2 签名、ZIP 16 KiB 对齐、APK/AAB 全部 64 位 ELF 对齐、官方 bundletool AAB 验证、JAR 115 个签名载荷及三个归档 CRC 检查通过。
-- 本补丁仅改 Dart 认证/入房恢复与发布资料；原生源码未改。原生验证基线见 1.2.0，正式标签另执行自动检查。不同重构建采用各自随包校验文件。
-- iOS 产物未签名；射频、设备配对、功耗及锁屏仍按 [五机验收](MANUAL_ACCEPTANCE.md) 手动确认，没有真机已通过声明。
+本轮完整本地预检通过：Android 383 项、iOS 402 项 Flutter 回归，均包含真实本机 Go 中继；iOS 独立建房 3 项也通过。两端静态与原生检查、Android JVM/Lint 和签名 APK/AAB、iOS 普通与 Wi-Fi Aware 变体构建通过。包内版本核对为 `1.2.4 / 65`。
 
-## 1.2.1 / 构建 62（2026-10-27）
+候选云端结果以 [Android 标签任务](https://github.com/TimeLordFang/DawnMesh/actions?query=branch%3Av1.2.4-rc.1)、[iOS 标签任务](https://github.com/TimeLordFang/DawnMeshIOS/actions?query=branch%3Av1.2.4-rc.1) 和各自 Release 附件为准，不沿用下方 1.2.3 的成功结果。
 
-- Android 352 项、iOS 371 项 Flutter 全量回归通过；两端均使用真实本机 Go 中继，无跳过。两端静态检查无问题。
-- 新增 6 项回归覆盖并发握手、超过 4 秒的忙碌对端、退出取消、超时释放，以及加解密队列对网络事件的公平调度和顺序。旧实现在这 6 项均失败，修复后通过。
-- 云端隔离分支连续 5 轮融合房测试通过，并完成原生检查与 iOS 编译：[验证运行](https://github.com/TimeLordFang/DawnMeshIOS/actions/runs/40473113690)。修复未通过放宽断言或自动重跑掩盖错误。
-- 两端最终 Release 编译通过，包内版本为 1.2.1 / 62。Android APK v2 签名、ZIP 16 KiB 对齐、APK/AAB 全部 64 位 ELF 对齐、官方 bundletool AAB 验证、115 个 JAR 签名载荷及三个归档 CRC 检查通过。
-- 本补丁仅改 Dart 连接/调度与版本资料；Android JVM、Lint 和原生音频验证沿用下方 1.2.0 对应的未变原生源码结果。iOS 云端再次运行了原生检查。
-- iOS 仍为未签名 App；五台手机的射频、跨平台配对和锁屏验收由用户按 [清单](MANUAL_ACCEPTANCE.md) 执行，没有真机通过声明。构建包哈希以对应本地文件或 Release 随包校验文件为准。
+## 最近正式发布：1.2.3
 
-## 1.2.0 / 构建 61（2026-10-27）
+| 平台 | 发布提交 | 正式任务 | 附件 |
+| --- | --- | --- | --- |
+| Android | `edae629` | [Actions 成功](https://github.com/TimeLordFang/DawnMesh/actions/runs/40641000790) | [签名 APK、AAB 与 SHA-256](https://github.com/TimeLordFang/DawnMesh/releases/tag/v1.2.3) |
+| iOS | `01bdb84` | [Actions 成功](https://github.com/TimeLordFang/DawnMeshIOS/actions/runs/40641006240) | [普通版、Wi-Fi Aware 版未签名 App ZIP 与 SHA-256](https://github.com/TimeLordFang/DawnMeshIOS/releases/tag/v1.2.3) |
 
-- Android：346 项 Flutter 回归全部通过；iOS：365 项全部通过。两端均配置本机真实 Go 中继，覆盖认证停滞备用入口、双网关去重、退出换钥和剩余上行，没有跳过该项。
-- 最后针对文字备用设备过滤实时音频/留言占位，补充步骤在 Android 12 项、iOS 6 项专项测试中通过。
-- 两端 Flutter 静态检查无问题。Android 应用 JVM 49 项通过，应用 Lint 通过（3 项工具版本/兼容图标资源告警，无错误）。
-- 共享原生音频 C++ ASan/UBSan 2 项通过；iOS 原生 3 项、Opus/RNNoise 互操作、Pod 补丁幂等、Swift 190 项协议检查、512 KiB 双向 TCP 代理及断链检查通过。
-- Android 签名 APK 与 AAB 均生成，包内版本 1.2.0 / 61。APK v2 签名、ZIP 16 KiB 对齐、ZIP CRC 与全部 64 位 ELF PT_LOAD 至少 16 KiB 对齐通过；AAB 结构经校验过官方 SHA-256 的 bundletool 1.18.3 验证，通过 CRC、ELF 对齐与 JarFile 115 个载荷逐项签名校验。
-- AAB jarsigner 通过并提示自签名证书、无时间戳及 JarInputStream 读取方式告警；不能描述为无警告验证。JDK 27 对部分验证工具另有弃用 API 提示。
-- iOS Release 设备目标编译通过，Info.plist 确认 1.2.0 / 61；新系统框架为弱链接，旧系统使用能力分支。产物未做发行签名，不能直接安装。
-- 新增手动验收开关、五机步骤和明确的不支持回退。没有连接真实手机，射频、配对互通、功耗和锁屏稳定性仍由 [手动验收](MANUAL_ACCEPTANCE.md) 记录，不能从编译/回环推断通过。
+两端 main 和 `v1.2.3-rc.3` 共四个校验任务成功后，提升相同提交为正式 `v1.2.3`；正式标签任务也已成功。下载后的四个正式包均核对为版本 `1.2.3`、构建号 `64`，SHA-256 与随包文件一致，ZIP CRC 通过。
 
-此段为本地构建与测试记录。GitHub Actions 会从发布标签重新构建，下载时使用同一 Release 随包提供的校验文件；不同构建不承诺二进制哈希相同。
+- Android APK 签名与本地发布证书一致；AAB 的 117 个载荷逐项签名校验通过。APK ZIP 16 KiB 对齐及 APK/AAB 的 64 位 ELF 对齐检查通过。
+- iOS 两种包的 Wi-Fi Aware 开关分别为 `NO` 和 `YES`，无内嵌签名描述文件。未签名 App ZIP 需要适当签名后才能安装。
+- 本地只保留一份对应平台的正式包及校验文件，位于 `artifacts/releases/1.2.3/`。不同构建的二进制哈希可能不同，应使用同一 Release 随包提供的校验文件。
 
+## 自动化覆盖
 
-## 通过
+- 本地 Android 383 项、iOS 402 项 Flutter 全量回归通过，均配置真实本机 Go 中继且无跳过；iOS 独立建房专项 3 项通过，两端静态检查通过。
+- Android 原生 ASan/UBSan、JVM 与 Lint、签名 APK/AAB 发布预检通过；iOS 原生 C++、Swift、插件补丁及苹果点对点 TCP 回归通过，普通版与 Wi-Fi Aware 版设备目标构建通过。
+- 融合回归覆盖确认丢失后的有界入房重试、16 人完整名单与密钥收敛、成员签名、语音可达性与去重，以及第 17 人拒绝。
+- 16 人容量夹具显式驱动已入房会话的同步，避免把 16 台设备的周期维护集中到一个测试事件循环；连接重试仍使用真实计时器，心跳和重连由独立用例覆盖。该夹具不代表完成了 16 台真机同时通话验收。
 
-- Flutter/Dart 分析：**No issues found**。
-- Flutter 共享回归：**298 项通过，1 项沿用基线跳过**。包含浏览器聊天加密样本、PAKE、防重放/冒名、房主管理与禁麦、房间容量、融合成员/中继/恢复和 UI；新增 iOS 入口/蓝牙建房禁用/地址校验测试通过；本地 HTTP/TCP 测试，不连接真实生产房间。
-- 跳过项为基线中的融合真实服务器集成测试，未配置 `DAWNMESH_FUSION_TEST_URL`；不计为已通过。
-- Swift 核心：**30 个断言通过**，包括分段/合并字节流、最大帧、畸形帧、Android 厂商广播、短写续传、实时包过期、序列回绕、PLC、PTT 恢复。
-- 原生 C/C++：实际编译 vendored Opus 137 个 C 源与 RNNoise；**2 个 CTest 目标通过**：voice_denoiser、ios_codec。
-- Android/iOS 实际编解码互通：Concentus 1.0.2 生成 103 字节 16kHz/20ms Opus；iOS codec 解码成功；iOS codec 生成包，Concentus 解码为 320 个非静音样本。无手机射频/声学参与。
-- iOS 工程 plist、entitlements、pbxproj 校验通过，Podfile/两个本地 podspec Ruby 语法检查通过。
-- 所有 Swift 原生源语法解析通过；BLE、Bonjour 与 WireSupport 在 macOS SDK 下通过类型检查（使用最小 Flutter API 测试桩）。该本机检查为补充；完整 iOS 编译结果见下一项。
+未配置 `DAWNMESH_FUSION_TEST_URL` 时，真实 Go 中继集成项按测试条件跳过；不能把该情况下的测试成功记作中继验收。多个移动仓库的网络回归应串行执行，避免固定端口冲突。
 
-- **远程完整 iOS 编译通过**：[GitHub Actions](https://github.com/TimeLordFang/DawnMeshIOS/actions/runs/38353118485)，源码提交 `bb9829a`。锁定 Dart 依赖解析、Flutter 分析/回归、C/C++ 与 Swift 回归、CocoaPods 工程生成、AudioUnit/UIKit Swift 桥、WebRTC ObjC++ 降噪桥及 release iOS 链接均成功。
-- 构建产物 `DawnMeshIOS-unsigned-app` 已上传，未过期，压缩包 15,635,359 字节；内容为未签名 `Runner.app`。不是已签名 IPA，也不能直接安装真机。
-- 首次 CocoaPods 工程生成失败后，调整 vendored 私有头文件封装，并区分 RNNoise/Opus 的重名 C 源文件，复测通过。
+## 本地复核入口
 
-## 当前未验证
-
-- `ios/Podfile.lock` 尚未提交；正式发布前需保存经 CI/Xcode 解析的完整 iOS 依赖锁定文件。
-- 真机 IPA 签名/安装、iOS↔Android↔网页的真实公网语音/E2EE、近场双向收发、六人 BLE 和十六人 LAN/融合容量。
-- 锁屏/后台/系统挂起、耳机射频共存、音频中断、麦克风声学与 Apple 能力审批。
-
-本机只有 Apple Command Line Tools；完整 iOS 编译由 GitHub macOS/Xcode Runner 完成。当前可以确认源码与原生桥编译通过，不能描述为“已签名或真机正常互通”。验收步骤见 [INTEROPERABILITY.md](INTEROPERABILITY.md)。
-
-## 复现
+在对应仓库根目录执行；真实中继测试需先启动测试服务并设置上述环境变量。
 
 ```sh
-./scripts/check.sh
-./scripts/build-ios.sh
+./scripts/preflight-release.sh
+./scripts/build-ios.sh --wifi-aware
 ```
 
-原生测试与编解码样本不包含邀请码、身份材料、真实音频或日志。仓库不提交本地 Flutter 工具链、Pods、签名证书和设备产物。
+iOS 签名与可选能力见 [签名说明](XCODE_SIGNING.md)，插件补丁见 [维护说明](../ios/patches/README.md)。
+
+## 尚需真机验收
+
+继续使用 [五机手动验收清单](MANUAL_ACCEPTANCE.md)，记录实际系统版本和安装方式，覆盖同网发现、跨平台 GATT 文字备用、Wi-Fi Aware 配对、耳机与音频中断、房主离线与重连、锁屏后台、多人容量及功耗。
+
+共同 Wi-Fi/热点下发现成功不能证明无共同网络时可以自动直连；编译、模拟通道和回环测试也不能替代厂商桌面动画、射频互通或道路声学验收。历史构建日志不作为当前版本已通过的证明。

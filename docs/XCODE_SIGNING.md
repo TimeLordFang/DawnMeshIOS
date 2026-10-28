@@ -1,6 +1,6 @@
 # Xcode 真机签名与可选 Wi-Fi Aware
 
-当前应用版本为 `1.2.3+64`。Personal Team 报错 “do not support the Wi-Fi Aware capability” 是签名权限限制，不是 Swift 语法错误；未签名编译成功也不证明描述文件可用。
+当前应用版本为 `1.2.4+65`。Personal Team 报错 “do not support the Wi-Fi Aware capability” 是签名权限限制，不是 Swift 语法错误；未签名编译成功也不证明描述文件可用。
 
 ## Personal Team：直接使用默认配置
 
@@ -9,7 +9,7 @@
 3. 选择已配对、已开启开发者模式的 iPhone，再 Build/Run。必要时在 Xcode 中清理构建目录并重试自动签名。不要删除账号、证书或安全存储。
 4. 普通 Wi-Fi/热点、苹果点对点 Wi-Fi、蓝牙和公网路径继续使用原有实现。应用会明确显示当前安装包未启用可选 Aware 加速。
 
-当前源码已通过 Personal Team 在已连接 iPhone 17 Pro 目标上的实际签名编译及签名验证；没有自动安装或启动应用，也没有进行无线互通验收。既有个人 Team 和 Scheme 设置不提交到仓库。
+既有个人 Team 和 Scheme 设置不提交到仓库；每次新版本仍需在实际账号和设备上验证签名、安装与运行。未签名 CI 构建不证明无线互通已验收。
 
 ## 显式启用 Wi-Fi Aware
 

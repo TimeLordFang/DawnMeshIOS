@@ -199,7 +199,7 @@ void main() {
     await showHome(tester);
     await tester.tap(find.text('Create Bluetooth room'));
     await tester.pump();
-    await tester.tap(find.text('创建房间'));
+    await tester.tap(find.text('创建'));
     await tester.pump();
     await pumpUntil(
       tester,
@@ -222,7 +222,7 @@ void main() {
     await showHome(tester);
     await tester.tap(find.text('Create Bluetooth room'));
     await tester.pump();
-    await tester.tap(find.text('创建房间'));
+    await tester.tap(find.text('创建'));
     await tester.pump();
     await pumpUntil(
       tester,

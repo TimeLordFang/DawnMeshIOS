@@ -24,7 +24,7 @@
 - 公网及近场的 PTT、静音和权限约束在恢复时保留；前台服务启动失败、失焦和退房不能导致异步重新开麦。语音状态恢复不自动恢复按键按下状态。
 - 发布签名不回退 debug；版本声明与应用更新日志有一致性检查。Android 备份和设备迁移规则排除身份、凭据与房间密钥。
 
-本次修复和升级条件见 [1.2.0](RELEASE_1.2.0.md)；历史模型保留于 [Android 安全基线](ANDROID_SECURITY_REVIEW.md)。
+本次修复和升级条件见 [1.2.0](CHANGELOG.md)；历史模型保留于 [历史 Android 安全快照](https://github.com/TimeLordFang/DawnMeshIOS/blob/v1.2.3/docs/ANDROID_SECURITY_REVIEW.md)。
 
 ## 仍存在的边界
 

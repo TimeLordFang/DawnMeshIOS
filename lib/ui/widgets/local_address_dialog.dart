@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_strings.dart';
+import 'dialog_action_button.dart';
 
 Future<InternetAddress?> requestLocalAddress(
   BuildContext context, {
@@ -83,11 +84,11 @@ class _LocalAddressDialogState extends State<_LocalAddressDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        DialogActionButton(
           onPressed: () => Navigator.pop(context),
           child: Text(english ? 'Cancel' : '取消'),
         ),
-        FilledButton(
+        DialogActionButton.primary(
           onPressed: valid ? () => Navigator.pop(context, candidate) : null,
           child: Text(english ? 'Continue' : '继续'),
         ),

@@ -86,7 +86,7 @@ void main() {
         await tester.pump();
         expect(homeState.mounted, isTrue);
         expect(tester.state(home), same(homeState));
-        await tester.tap(find.text('创建房间'));
+        await tester.tap(find.text('创建'));
         await tester.pump();
         tester.view.resetViewInsets();
         await tester.pump();

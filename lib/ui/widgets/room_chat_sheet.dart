@@ -14,6 +14,7 @@ import '../theme/app_theme.dart';
 import 'avatar_frame.dart';
 import 'chat_image_bubble.dart';
 import 'voice_note_bubble.dart';
+import 'dialog_action_button.dart';
 
 /// Modal bottom sheet for in-memory room text chat.
 class RoomChatSheet extends StatefulWidget {
@@ -139,12 +140,11 @@ class _RoomChatSheetState extends State<RoomChatSheet> {
         title: Text(s.chatRecall),
         content: Text(s.chatRecallConfirm),
         actions: [
-          TextButton(
+          DialogActionButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(s.cancel),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.darkDanger),
+          DialogActionButton.destructive(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(s.chatRecall),
           ),
